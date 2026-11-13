@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cb7a6347c0db454c8d43888cd7b748b, type: 3}
+  m_Name: machete
+  m_EditorClassIdentifier: Assembly-CSharp::Dolores1810.WeaponData
+  id: machete
+  displayName: Machete insurgente
+  description: Corta con gran velocidad. Ideal para pelear sin parar.
+  icon: {fileID: 21300000, guid: cc4001a212d4afc43a5cf81e7e03d68e, type: 3}
+  damage: 20
+  attackSpeed: 1.35
+  reach: 1
+  price: 250
+  knockback: 1
+  attackClip:
+    name: ataque_machete
+    frames:
+    - {fileID: 21300000, guid: d9eb5b37891a636468fdcb962e081bc2, type: 3}
+    - {fileID: 21300000, guid: 211a3b73f7d00a5478265c7d7327efa9, type: 3}
+    - {fileID: 21300000, guid: 0216fd9e9a466474abb2429ab4d62b3f, type: 3}
+    - {fileID: 21300000, guid: effd31061bbc41b498daa4caeafe28e3, type: 3}
+    - {fileID: 21300000, guid: 831cb91a74baaab4b827baf502af18c1, type: 3}
+    - {fileID: 21300000, guid: 35f34df0aaf0bcd4fa7060c0f87ceec7, type: 3}
+    - {fileID: 21300000, guid: b06b578e14eb7ca4dafdd7159fe04bf4, type: 3}
+    - {fileID: 21300000, guid: f4c8267728e94394fa1c96009a8a3308, type: 3}
+    fps: 17
+    loop: 0
+  hitStartFrame: 3
+  hitEndFrame: 5
+  slashColor: {r: 1, g: 1, b: 1, a: 1}
+  swingSfx: 2

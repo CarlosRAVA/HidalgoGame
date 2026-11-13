@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cb7a6347c0db454c8d43888cd7b748b, type: 3}
+  m_Name: espada
+  m_EditorClassIdentifier: Assembly-CSharp::Dolores1810.WeaponData
+  id: espada
+  displayName: "Espada de caballer\xEDa"
+  description: "Hoja de acero m\xE1s larga y r\xE1pida. Alcanza un poco m\xE1s lejos."
+  icon: {fileID: 21300000, guid: ba9d831a2e92abf4f81202f685f0a236, type: 3}
+  damage: 15
+  attackSpeed: 1.1
+  reach: 1.15
+  price: 120
+  knockback: 1
+  attackClip:
+    name: ataque_espada
+    frames:
+    - {fileID: 21300000, guid: a577eb5b3edb83d489538453275509c4, type: 3}
+    - {fileID: 21300000, guid: 4e53e60f6add23b4e97e551140c9bae2, type: 3}
+    - {fileID: 21300000, guid: ae3345d5fd6f19a48ae8e10c0296839f, type: 3}
+    - {fileID: 21300000, guid: dc97d9628d1d95f49a92b142ad09eee4, type: 3}
+    - {fileID: 21300000, guid: 36dfadb9bb6a060448407d4056b08a7f, type: 3}
+    - {fileID: 21300000, guid: 61d9b07f9144ff84f8e9ea4492ec3a80, type: 3}
+    - {fileID: 21300000, guid: bb1cba3c73e1e32418e32ab6a99575a6, type: 3}
+    - {fileID: 21300000, guid: 59456588871cde049b18bab244de72c0, type: 3}
+    fps: 17
+    loop: 0
+  hitStartFrame: 3
+  hitEndFrame: 5
+  slashColor: {r: 1, g: 1, b: 1, a: 1}
+  swingSfx: 2
