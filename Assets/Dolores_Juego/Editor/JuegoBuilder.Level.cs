@@ -512,9 +512,12 @@ namespace Dolores1810.EditorTools
             go.transform.SetParent(gProps);
             go.transform.position = new Vector3(x, baseY + 1.7f, 0f);
             var gsp = S("Props/fence_3.png");
-            var sr = SR("Barrotes", gsp, new Vector3(0f, -1.7f, 0f), 6, go.transform, false, true);
-            Vector2 gz = gsp.bounds.size;
-            sr.transform.localScale = new Vector3(1.1f / Mathf.Max(0.1f, gz.x), 3.4f / Mathf.Max(0.1f, gz.y), 1f);
+            float segH = gsp.bounds.size.y * 1.1f;
+            for (int i = 0; i < 3; i++)
+            {
+                var sr = SR("Barrotes_" + i, gsp, new Vector3(0f, -1.7f + i * (segH * 0.95f), 0f), 6, go.transform, false, true);
+                sr.transform.localScale = Vector3.one * 1.1f;
+            }
             var bc = go.AddComponent<BoxCollider2D>();
             bc.size = new Vector2(0.9f, 3.4f);
             var g = go.AddComponent<Gate>();

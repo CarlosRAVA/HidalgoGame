@@ -297,9 +297,13 @@ namespace Dolores1810
             state = PState.Climbing;
             attackCd = 0.2f;
             running = false;
-            rb.gravityScale = 0f;
-            rb.SetVel(Vector2.zero);
-            animator.Play(climb, true);
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.gravityScale = 0f;
+                rb.SetVel(Vector2.zero);
+            }
+            if (animator != null) animator.Play(climb, true);
             AudioHub.Play(SfxId.Climb, 0.05f, 0.6f);
         }
 
@@ -316,7 +320,8 @@ namespace Dolores1810
             {
                 float dir = climbZone.exitDirection >= 0f ? 1f : -1f;
                 Vector2 p = new Vector2(climbZone.CenterX + dir * 0.9f, climbZone.TopY + 0.05f);
-                rb.position = p;
+                if (rb == null) rb = GetComponent<Rigidbody2D>();
+                if (rb != null) rb.position = p;
                 transform.position = p;
                 facing = dir;
                 ExitClimb(Vector2.zero);
@@ -327,7 +332,7 @@ namespace Dolores1810
                 ExitClimb(Vector2.zero);
                 return;
             }
-            animator.speed = Mathf.Abs(v) > 0.1f ? 1f : 0f;
+            if (animator != null) animator.speed = Mathf.Abs(v) > 0.1f ? 1f : 0f;
             if (Mathf.Abs(v) > 0.1f)
             {
                 stepTimer -= Time.deltaTime;
@@ -338,8 +343,12 @@ namespace Dolores1810
         void ExitClimb(Vector2 velocity)
         {
             state = PState.Normal;
-            rb.gravityScale = gravityScale;
-            rb.SetVel(velocity);
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.gravityScale = gravityScale;
+                rb.SetVel(velocity);
+            }
             if (animator != null) animator.speed = 1f;
             jumpBufferTimer = 0f;
         }
@@ -432,14 +441,17 @@ namespace Dolores1810
             running = false;
             attackCd = attackCooldown / Mathf.Max(0.5f, weapon.attackSpeed);
             hitThisSwing.Clear();
-            animator.Play(weapon.attackClip, true);
-            animator.speed = Mathf.Max(0.5f, weapon.attackSpeed);
+            if (animator != null)
+            {
+                animator.Play(weapon.attackClip, true);
+                animator.speed = Mathf.Max(0.5f, weapon.attackSpeed);
+            }
             AudioHub.Play(weapon.swingSfx, 0.08f);
         }
 
         void TickAttack()
         {
-            if (weapon == null || animator.Current != weapon.attackClip)
+            if (weapon == null || animator == null || animator.Current != weapon.attackClip)
             {
                 state = PState.Normal;
                 return;
@@ -527,8 +539,9 @@ namespace Dolores1810
             hurtTimer = 0.38f;
             invulnTimer = invulnTime;
             float dir = transform.position.x >= sourcePos.x ? 1f : -1f;
-            rb.SetVel(new Vector2(dir * 7f, 7f));
-            animator.Play(hit, true);
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (rb != null) rb.SetVel(new Vector2(dir * 7f, 7f));
+            if (animator != null) animator.Play(hit, true);
             return true;
         }
 
@@ -561,13 +574,17 @@ namespace Dolores1810
             health = 0;
             moveInput = 0f;
             running = false;
-            rb.gravityScale = gravityScale;
-            animator.speed = 1f;
-            animator.Play(death, true);
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (rb != null) rb.gravityScale = gravityScale;
+            if (animator != null)
+            {
+                animator.speed = 1f;
+                animator.Play(death, true);
+            }
             AudioHub.Play(SfxId.PlayerDie, 0f);
             if (visual != null) visual.color = Color.white;
             if (GameSession.I != null) GameSession.I.SetPrompt(null);
-            if (transform.position.y < -1.5f)
+            if (transform.position.y < -1.5f && rb != null)
             {
                 rb.SetVel(Vector2.zero);
                 rb.simulated = false;

@@ -26,6 +26,7 @@ namespace Dolores1810
 
         public bool TakeDamage(int amount, Vector2 sourcePos)
         {
+            if (hp <= 0 && hits > 0) hp = Mathf.Max(1, hits) * GameRules.BaseWeaponDamage;
             if (hp <= 0) return false;
             hp -= Mathf.Max(1, amount);
             shake = 0.2f;

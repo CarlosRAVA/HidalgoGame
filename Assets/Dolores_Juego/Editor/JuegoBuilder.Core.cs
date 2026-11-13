@@ -32,42 +32,53 @@ namespace Dolores1810.EditorTools
         [MenuItem("Tools/Dolores 1810/Construir juego completo (menu + 3 niveles)")]
         public static void BuildAll()
         {
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             try
             {
                 rnd = new System.Random(1810);
-                EditorUtility.DisplayProgressBar("1810", "Importando recursos...", 0.03f);
+                if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Importando recursos...", 0.03f);
                 AssetDatabase.Refresh();
                 BackupScenes();
                 EnsureLayers();
-                EditorUtility.DisplayProgressBar("1810", "Configurando sprites...", 0.1f);
+                if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Configurando sprites...", 0.1f);
                 ConfigureSprites();
                 EnsureMaterials();
-                EditorUtility.DisplayProgressBar("1810", "Creando datos del juego...", 0.3f);
+                if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Creando datos del juego...", 0.3f);
                 CreateDataAssets();
                 if (!Directory.Exists(Path.Combine(Application.dataPath, "Scenes"))) Directory.CreateDirectory(Path.Combine(Application.dataPath, "Scenes"));
-                EditorUtility.DisplayProgressBar("1810", "Construyendo el menú principal...", 0.4f);
+                if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Construyendo el menú principal...", 0.4f);
                 BuildMenuScene();
                 for (int i = 1; i <= 3; i++)
                 {
-                    EditorUtility.DisplayProgressBar("1810", "Construyendo el nivel " + i + "...", 0.45f + i * 0.15f);
+                    if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Construyendo el nivel " + i + "...", 0.45f + i * 0.15f);
                     BuildLevel(i);
                 }
                 SetBuildSettings();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
                 string report = ValidateRules();
+                Debug.Log("[1810] Construcción finalizada con éxito:\n" + report);
                 EditorSceneManager.OpenScene(ScenesDir + "/MainMenu.unity");
-                EditorUtility.ClearProgressBar();
-                EditorUtility.DisplayDialog("Listo",
-                    "Se crearon MainMenu, Level1, Level2 y Level3 y se agregaron al Build Settings.\n\n" + report +
-                    "\nAbre MainMenu y presiona Play.", "OK");
+                if (!Application.isBatchMode)
+                {
+                    EditorUtility.ClearProgressBar();
+                    EditorUtility.DisplayDialog("Listo",
+                        "Se crearon MainMenu, Level1, Level2 y Level3 y se agregaron al Build Settings.\n\n" + report +
+                        "\nAbre MainMenu y presiona Play.", "OK");
+                }
             }
             catch (Exception e)
             {
-                EditorUtility.ClearProgressBar();
+                if (!Application.isBatchMode) EditorUtility.ClearProgressBar();
                 Debug.LogError("[1810] Error al construir: " + e);
-                EditorUtility.DisplayDialog("Error al construir", e.Message + "\n\nRevisa la consola para más detalles.", "OK");
+                if (!Application.isBatchMode)
+                {
+                    EditorUtility.DisplayDialog("Error al construir", e.Message + "\n\nRevisa la consola para más detalles.", "OK");
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 
@@ -76,7 +87,10 @@ namespace Dolores1810.EditorTools
         {
             string r = ValidateRules();
             Debug.Log("[1810] " + r);
-            EditorUtility.DisplayDialog("Validación", r, "OK");
+            if (!Application.isBatchMode)
+            {
+                EditorUtility.DisplayDialog("Validación", r, "OK");
+            }
         }
 
         // ================================================================== respaldo y capas

@@ -19,7 +19,7 @@ namespace Dolores1810
             if (instance == null)
             {
                 var go = new GameObject("MusicManager");
-                Object.DontDestroyOnLoad(go);
+                if (Application.isPlaying) Object.DontDestroyOnLoad(go);
                 instance = go.AddComponent<MusicManager>();
             }
             return instance;
