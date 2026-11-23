@@ -58,23 +58,34 @@ namespace Dolores1810
             groundMask = LayerMask.GetMask("Ground");
             playerMask = LayerMask.GetMask("Player");
             homeX = transform.position.x;
+            InitConfig();
+            if (hpBar != null) hpBar.gameObject.SetActive(false);
+        }
+
+        public void InitConfig()
+        {
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (col == null) col = GetComponent<BoxCollider2D>();
             if (animator != null && animator.target == null) animator.target = visual;
             if (config != null)
             {
                 maxHp = config.MaxHealth;
                 baseColor = config.tint;
                 if (visual != null) visual.transform.localScale = Vector3.one * config.scale;
-                col.size = new Vector2(config.colliderWidth * config.scale, config.colliderHeight * config.scale);
-                col.offset = new Vector2(0f, config.colliderHeight * config.scale * 0.5f);
+                if (col != null)
+                {
+                    col.size = new Vector2(config.colliderWidth * config.scale, config.colliderHeight * config.scale);
+                    col.offset = new Vector2(0f, config.colliderHeight * config.scale * 0.5f);
+                }
             }
-            else maxHp = 20;
+            else if (maxHp <= 0) maxHp = 20;
             hp = maxHp;
             if (visual != null) visual.color = baseColor;
-            if (hpBar != null) hpBar.gameObject.SetActive(false);
         }
 
         void Start()
         {
+            InitConfig();
             patrolTimer = Random.Range(1f, 3f);
             cooldown = Random.Range(0.3f, 1f);
             SetFacing(-1);

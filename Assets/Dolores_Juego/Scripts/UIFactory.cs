@@ -137,8 +137,8 @@ namespace Dolores1810
             if (outline)
             {
                 var o = rt.gameObject.AddComponent<Outline>();
-                o.effectColor = new Color(0.1f, 0.05f, 0.02f, 0.9f);
-                o.effectDistance = new Vector2(2.5f, -2.5f);
+                o.effectColor = new Color(0.08f, 0.04f, 0.01f, 0.85f);
+                o.effectDistance = new Vector2(1.2f, -1.2f);
             }
             return t;
         }

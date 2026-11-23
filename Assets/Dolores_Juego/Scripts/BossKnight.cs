@@ -37,6 +37,7 @@ namespace Dolores1810
         Vector3 startPos;
 
         public bool Active { get { return state != BState.Dormant && state != BState.Dead; } }
+        public bool IsDead { get { return state == BState.Dead; } }
 
         void Awake()
         {
@@ -49,45 +50,72 @@ namespace Dolores1810
             mat.friction = 0f;
             col.sharedMaterial = mat;
             playerMask = LayerMask.GetMask("Player");
+            InitConfig();
+        }
+
+        public void InitConfig()
+        {
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (col == null) col = GetComponent<BoxCollider2D>();
             if (animator != null && animator.target == null) animator.target = visual;
             if (config != null)
             {
                 maxHp = config.MaxHealth;
                 baseColor = config.tint;
-                visual.transform.localScale = Vector3.one * config.scale;
-                col.size = new Vector2(config.colliderWidth * config.scale, config.colliderHeight * config.scale);
-                col.offset = new Vector2(0f, config.colliderHeight * config.scale * 0.5f);
+                if (visual != null) visual.transform.localScale = Vector3.one * config.scale;
+                if (col != null)
+                {
+                    col.size = new Vector2(config.colliderWidth * config.scale, config.colliderHeight * config.scale);
+                    col.offset = new Vector2(0f, config.colliderHeight * config.scale * 0.5f);
+                }
             }
-            else maxHp = 150;
+            else if (maxHp <= 0) maxHp = 150;
             hp = maxHp;
-            visual.color = baseColor;
+            if (visual != null) visual.color = baseColor;
         }
 
         void Start()
         {
+            InitConfig();
             startPos = transform.position;
-            animator.Play(idle, true);
+            if (animator != null && idle != null) animator.Play(idle, true);
             SetFacing(-1);
         }
 
-        void SetFacing(int d) { facing = d; visual.flipX = d < 0; }
+        void OnDestroy()
+        {
+            if (GameSession.I != null) GameSession.I.Respawned -= ResetFight;
+            if (Active) CombatTracker.Remove();
+        }
+
+        void SetFacing(int d) { facing = d; if (visual != null) visual.flipX = d < 0; }
 
         public void Activate()
         {
             if (state != BState.Dormant) return;
             state = BState.Chase;
-            nextAttackAt = Time.time + 1.2f;
+            timer = 0f;
+            flashTimer = 0f;
+            didHit = false;
+            waveSpawned = false;
+            nextAttackAt = Time.time + 1.0f;
+            if (col != null) col.enabled = true;
+            if (rb != null) rb.simulated = true;
             CombatTracker.Add();
-            foreach (var g in arenaGates) if (g != null) g.Close();
+            if (arenaGates != null)
+            {
+                foreach (var g in arenaGates) if (g != null) g.Close();
+            }
             AudioHub.Play(SfxId.BossAlert, 0f);
             var gs = GameSession.I;
             if (gs != null)
             {
                 gs.BossStarted(bossName, maxHp);
                 gs.ShowToast(bossName);
+                gs.Respawned -= ResetFight;
+                gs.Respawned += ResetFight;
             }
             MusicManager.Ensure().SetMood(Mood.Boss);
-            if (gs != null) gs.Respawned += ResetFight;
         }
 
         /// <summary>Si el jugador muere durante el combate, el jefe se reinicia y las rejas se abren para poder volver a entrar.</summary>
@@ -95,36 +123,60 @@ namespace Dolores1810
         {
             var gs = GameSession.I;
             if (gs != null) gs.Respawned -= ResetFight;
-            if (state == BState.Dead || state == BState.Dormant) return;
+            if (state == BState.Dead) return;
+            bool wasActive = state != BState.Dormant;
             state = BState.Dormant;
             hp = maxHp;
             enraged = false;
             desiredVelX = 0f;
-            CombatTracker.Remove();
+            timer = 0f;
+            flashTimer = 0f;
+            didHit = false;
+            waveSpawned = false;
+            nextAttackAt = 0f;
+            if (wasActive) CombatTracker.Remove();
             transform.position = startPos;
-            rb.SetVel(Vector2.zero);
-            visual.color = baseColor;
-            animator.Play(idle, true);
+            if (rb != null)
+            {
+                rb.simulated = true;
+                rb.SetVel(Vector2.zero);
+            }
+            if (col != null) col.enabled = true;
+            if (visual != null) visual.color = baseColor;
+            if (animator != null) animator.Play(idle, true);
             SetFacing(-1);
-            foreach (var g in arenaGates) if (g != null) g.Open();
+            if (arenaGates != null)
+            {
+                foreach (var g in arenaGates) if (g != null) g.Open();
+            }
             if (gs != null) gs.BossEnded();
             MusicManager.Ensure().SetMood(Mood.Explore);
         }
 
         void Update()
         {
-            if (state == BState.Dormant || state == BState.Dead) return;
+            if (state == BState.Dead) return;
             var gs = GameSession.I;
             if (gs != null && (gs.State == GameState.Paused || gs.State == GameState.Shop)) return;
+
+            PlatformerPlayer pl = gs != null ? gs.player : null;
+            bool target = pl != null && !pl.IsDead && (gs == null || gs.State == GameState.Playing);
+
+            if (state == BState.Dormant)
+            {
+                if (target && Mathf.Abs(pl.transform.position.x - transform.position.x) < 10f && Mathf.Abs(pl.transform.position.y - transform.position.y) < 5f)
+                {
+                    Activate();
+                }
+                return;
+            }
 
             if (flashTimer > 0f)
             {
                 flashTimer -= Time.deltaTime;
-                if (flashTimer <= 0f && state != BState.Windup) visual.color = baseColor;
+                if (flashTimer <= 0f && state != BState.Windup && visual != null) visual.color = baseColor;
             }
 
-            PlatformerPlayer pl = gs != null ? gs.player : null;
-            bool target = pl != null && !pl.IsDead && gs.State == GameState.Playing;
             float dx = target ? pl.transform.position.x - transform.position.x : 0f;
             timer -= Time.deltaTime;
 
@@ -154,8 +206,8 @@ namespace Dolores1810
                     break;
                 case BState.Slam:
                     desiredVelX = 0f;
-                    if (!waveSpawned && animator.Frame >= 6) { waveSpawned = true; SpawnWaves(); }
-                    if (animator.Finished) EndAttack(0.8f);
+                    if (!waveSpawned && (animator.Frame >= 6 || timer <= 0.45f)) { waveSpawned = true; SpawnWaves(); }
+                    if (animator.Finished || timer <= 0f) EndAttack(0.8f);
                     break;
                 case BState.Recover:
                     desiredVelX = 0f;
@@ -187,6 +239,7 @@ namespace Dolores1810
         void StartSlam()
         {
             state = BState.Slam;
+            timer = 1.15f;
             waveSpawned = false;
             animator.Play(attack, true);
             AudioHub.Play(SfxId.EnemySwing, 0.04f, 1f);
@@ -228,7 +281,8 @@ namespace Dolores1810
 
         public bool TakeDamage(int amount, Vector2 sourcePos)
         {
-            if (state == BState.Dead || state == BState.Dormant) return false;
+            if (state == BState.Dead) return false;
+            if (state == BState.Dormant) Activate();
             hp -= Mathf.Max(1, amount);
             AudioHub.Play(SfxId.HitEnemy, 0.06f);
             Fx.Hit(transform.position + new Vector3(0f, 1.3f, 0f));

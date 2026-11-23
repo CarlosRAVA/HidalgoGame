@@ -64,6 +64,7 @@ namespace Dolores1810.EditorTools
             items.Add(MakeItem("mejora_res_rec", ShopKind.StaminaRecovery, "Recuperación de aliento", "Recuperas la resistencia 30% más rápido.", S("UI/icon_resistencia.png"), new int[] { 80, 150, 250 }, ""));
             items.Add(MakeItem("mejora_vel", ShopKind.Speed, "Botas veloces", "Caminas y corres 6% más rápido por nivel.", S("UI/icon_velocidad.png"), new int[] { 100, 200, 320 }, ""));
             items.Add(MakeItem("mejora_atq", ShopKind.Attack, "Fuerza de ataque", "Todas tus armas hacen 15% más de daño por nivel.", S("UI/icon_ataque.png"), new int[] { 120, 240, 400 }, ""));
+            items.Add(MakeItem("mejora_escudo", ShopKind.Shield, "Escudo insurgente", "Absorbe golpes enemigos antes de perder corazones (+1 carga de escudo por nivel, se regenera fuera de peligro).", S("Props/shield_2.png"), new int[] { 110, 220, 350 }, ""));
 
             // ---- enemigos (la resistencia fija golpes y daño: 2/1, 4/2, 6/3, 8/4)
             enemyAssets.Clear();

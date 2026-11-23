@@ -15,12 +15,13 @@ namespace Dolores1810
             public ShopItemData item;
             public WeaponData weapon;
             public Button button;
-            public Text nameText, stateText;
-            public Image icon, back;
+            public Text nameText, subText, stateText;
+            public Image icon, back, stateBadge;
         }
 
         readonly List<Entry> entries = new List<Entry>();
         Text coinsText, detailTitle, detailBody, message;
+        Image detailIcon;
         Button closeButton;
         int selected;
         float messageTimer;
@@ -29,7 +30,7 @@ namespace Dolores1810
 
         public static ShopUI Create(Transform parent, System.Action onClose)
         {
-            var overlay = UIFactory.FullScreen(parent, "Tienda", new Color(0f, 0f, 0f, 0.7f));
+            var overlay = UIFactory.FullScreen(parent, "Tienda", new Color(0f, 0f, 0f, 0.74f));
             overlay.raycastTarget = true;
             var ui = overlay.gameObject.AddComponent<ShopUI>();
             ui.onClose = onClose;
@@ -40,55 +41,90 @@ namespace Dolores1810
         void Build()
         {
             Transform t = transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1560f, 960f));
-            var title = UIFactory.Label(t, "Titulo", "TIENDA DEL MERCADER", 78, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-120f, 405f), new Vector2(1000f, 100f));
-            coinsText = UIFactory.Label(t, "Monedas", "", 46, new Color(0.55f, 0.32f, 0.02f, 1f), TextAnchor.MiddleRight, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(coinsText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(560f, 405f), new Vector2(420f, 70f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1680f, 980f));
+
+            var title = UIFactory.Label(t, "Titulo", "TIENDA DEL MERCADER", 68, UIFactory.Ink, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-240f, 418f), new Vector2(1060f, 90f));
+
+            var coinBadge = UIFactory.Box(t, "MonedasFondo", new Color(0.24f, 0.14f, 0.07f, 0.94f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(390f, 68f));
+            UIFactory.PlaceCenter(coinBadge.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(585f, 418f), new Vector2(390f, 68f));
+            var coinTrim = UIFactory.Box(coinBadge.transform, "Borde", new Color(0.86f, 0.67f, 0.25f, 0.85f), new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 68f));
+            UIFactory.Place(coinTrim.rectTransform, new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 68f));
+            coinsText = UIFactory.Label(coinBadge.transform, "Monedas", "", 38, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.Stretch(coinsText.rectTransform);
 
             var db = GameDatabase.I;
-            if (db != null && db.shopItems != null)
+            if (db != null)
             {
-                for (int i = 0; i < db.shopItems.Length; i++)
+                db.EnsureUpgrades();
+                if (db.shopItems != null)
                 {
-                    var item = db.shopItems[i];
-                    if (item == null) continue;
-                    WeaponData w = item.kind == ShopKind.Weapon ? db.GetWeapon(item.weaponId) : null;
-                    if (item.kind == ShopKind.Weapon && (w == null || w.price <= 0)) continue;
-                    AddCard(item, w);
+                    for (int i = 0; i < db.shopItems.Length; i++)
+                    {
+                        var item = db.shopItems[i];
+                        if (item == null) continue;
+                        WeaponData w = item.kind == ShopKind.Weapon ? db.GetWeapon(item.weaponId) : null;
+                        if (item.kind == ShopKind.Weapon && (w == null || w.price <= 0)) continue;
+                        AddCard(item, w);
+                    }
                 }
             }
 
-            var detailBack = UIFactory.Box(t, "DetalleFondo", new Color(0.3f, 0.18f, 0.08f, 0.16f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1440f, 190f));
-            UIFactory.PlaceCenter(detailBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -310f), new Vector2(1440f, 190f));
-            detailTitle = UIFactory.Label(t, "DetalleTitulo", "", 44, UIFactory.Ink, TextAnchor.UpperLeft, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(detailTitle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-190f, -258f), new Vector2(1000f, 56f));
-            detailBody = UIFactory.Label(t, "DetalleTexto", "", 32, UIFactory.Ink, TextAnchor.UpperLeft, FontStyle.Normal, false);
-            UIFactory.PlaceCenter(detailBody.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-190f, -335f), new Vector2(1000f, 120f));
-            message = UIFactory.Label(t, "Mensaje", "", 38, new Color(0.65f, 0.1f, 0.06f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(message.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -210f), new Vector2(1000f, 50f));
-            closeButton = UIFactory.MakeButton(t, "Cerrar", new Vector2(560f, -330f), new Vector2(320f, 90f), Close);
+            message = UIFactory.Label(t, "Mensaje", "", 32, new Color(0.62f, 0.1f, 0.06f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.PlaceCenter(message.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -248f), new Vector2(1500f, 44f));
+
+            var detailBack = UIFactory.Box(t, "DetalleFondo", new Color(0.22f, 0.13f, 0.06f, 0.94f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1220f, 165f));
+            UIFactory.PlaceCenter(detailBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-170f, -362f), new Vector2(1220f, 165f));
+            var detailTrim = UIFactory.Box(detailBack.transform, "BordeSuperior", new Color(0.86f, 0.67f, 0.25f, 0.8f), new Vector2(0f, 1f), Vector2.zero, new Vector2(1220f, 4f));
+            UIFactory.Place(detailTrim.rectTransform, new Vector2(0f, 1f), Vector2.zero, new Vector2(1220f, 4f));
+
+            var detailIconFrame = UIFactory.Box(detailBack.transform, "DetalleIconoFondo", new Color(0.14f, 0.08f, 0.04f, 0.9f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(124f, 124f));
+            UIFactory.PlaceCenter(detailIconFrame.rectTransform, new Vector2(0f, 0.5f), new Vector2(82f, 0f), new Vector2(124f, 124f));
+            detailIcon = UIFactory.Icon(detailIconFrame.transform, "DetalleIcono", null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 104f));
+            UIFactory.PlaceCenter(detailIcon.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 104f));
+
+            detailTitle = UIFactory.Label(detailBack.transform, "DetalleTitulo", "", 36, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.Place(detailTitle.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -14f), new Vector2(1030f, 44f));
+            detailBody = UIFactory.Label(detailBack.transform, "DetalleTexto", "", 27, UIFactory.Cream, TextAnchor.UpperLeft, FontStyle.Normal, false);
+            UIFactory.Place(detailBody.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -62f), new Vector2(1030f, 94f));
+
+            closeButton = UIFactory.MakeButton(t, "Cerrar", new Vector2(615f, -362f), new Vector2(310f, 100f), Close);
         }
 
         void AddCard(ShopItemData item, WeaponData w)
         {
             int idx = entries.Count;
-            int col = idx % 3, row = idx / 3;
-            Vector2 center = new Vector2(-470f + col * 470f, 255f - row * 170f);
-            var b = UIFactory.MakeButton(transform, "", center, new Vector2(450f, 150f), () => Activate(idx));
+            int col = idx % 2, row = idx / 2;
+            Vector2 center = new Vector2(-395f + col * 790f, 285f - row * 114f);
+            var b = UIFactory.MakeButton(transform, "", center, new Vector2(760f, 104f), () => Activate(idx));
             var lbl = b.GetComponentInChildren<Text>();
             if (lbl != null) lbl.text = "";
+
             var e = new Entry();
-            e.item = item; e.weapon = w; e.button = b;
+            e.item = item;
+            e.weapon = w;
+            e.button = b;
             e.back = b.GetComponent<Image>();
-            e.icon = UIFactory.Icon(b.transform, "Icono", item.icon, new Vector2(0f, 0.5f), new Vector2(18f, 0f), new Vector2(104f, 104f));
-            e.icon.rectTransform.pivot = new Vector2(0f, 0.5f);
-            e.nameText = UIFactory.Label(b.transform, "Nombre", item.displayName, 32, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold);
-            UIFactory.Place(e.nameText.rectTransform, new Vector2(0f, 1f), new Vector2(136f, -16f), new Vector2(300f, 50f));
-            e.stateText = UIFactory.Label(b.transform, "Estado", "", 28, UIFactory.Gold, TextAnchor.UpperLeft, FontStyle.Bold);
-            UIFactory.Place(e.stateText.rectTransform, new Vector2(0f, 1f), new Vector2(136f, -66f), new Vector2(300f, 70f));
+
+            var iconFrame = UIFactory.Box(b.transform, "IconoFondo", new Color(0.16f, 0.08f, 0.04f, 0.88f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(82f, 82f));
+            UIFactory.PlaceCenter(iconFrame.rectTransform, new Vector2(0f, 0.5f), new Vector2(56f, 0f), new Vector2(82f, 82f));
+            e.icon = UIFactory.Icon(iconFrame.transform, "Icono", item.icon, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, 70f));
+            UIFactory.PlaceCenter(e.icon.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, 70f));
+
+            e.nameText = UIFactory.Label(b.transform, "Nombre", item.displayName, 30, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.Place(e.nameText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -12f), new Vector2(430f, 42f));
+
+            e.subText = UIFactory.Label(b.transform, "Subtitulo", "", 22, new Color(0.95f, 0.86f, 0.7f, 0.95f), TextAnchor.MiddleLeft, FontStyle.Normal, false);
+            UIFactory.Place(e.subText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -56f), new Vector2(430f, 34f));
+
+            e.stateBadge = UIFactory.Box(b.transform, "EstadoFondo", new Color(0.16f, 0.08f, 0.03f, 0.9f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(204f, 72f));
+            UIFactory.PlaceCenter(e.stateBadge.rectTransform, new Vector2(1f, 0.5f), new Vector2(-116f, 0f), new Vector2(204f, 72f));
+            e.stateText = UIFactory.Label(e.stateBadge.transform, "Estado", "", 25, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.Stretch(e.stateText.rectTransform);
+
             var card = b.gameObject.AddComponent<ShopCard>();
-            card.owner = this; card.index = idx;
+            card.owner = this;
+            card.index = idx;
             entries.Add(e);
         }
 
@@ -118,25 +154,41 @@ namespace Dolores1810
             if (onClose != null) onClose();
         }
 
-        string StateOf(Entry e, out bool canAct)
+        string SubInfoOf(Entry e)
+        {
+            if (e.item.kind == ShopKind.Weapon && e.weapon != null)
+                return "Daño " + e.weapon.damage + " · Vel x" + e.weapon.attackSpeed.ToString("0.0") + " · Alcance x" + e.weapon.reach.ToString("0.0");
+            int lvl = PlayerProgress.GetUpgradeLevel(e.item.kind);
+            int max = PlayerProgress.MaxUpgradeLevel(e.item);
+            if (lvl >= max) return "Mejora al máximo (" + lvl + "/" + max + ")";
+            return "Nivel actual: " + lvl + " / " + max;
+        }
+
+        string StateOf(Entry e, out bool canAct, out bool equippedOrMax)
         {
             canAct = false;
+            equippedOrMax = false;
             if (e.item.kind == ShopKind.Weapon)
             {
                 if (PlayerProgress.OwnsWeapon(e.weapon.id))
                 {
                     bool eq = PlayerProgress.EquippedWeaponId == e.weapon.id;
                     canAct = !eq;
-                    return eq ? "EQUIPADA" : "COMPRADA - equipar";
+                    equippedOrMax = eq;
+                    return eq ? "EQUIPADA" : "EQUIPAR";
                 }
                 canAct = true;
                 return e.weapon.price + " monedas";
             }
             int lvl = PlayerProgress.GetUpgradeLevel(e.item.kind);
             int max = PlayerProgress.MaxUpgradeLevel(e.item);
-            if (lvl >= max) return "NIVEL MÁXIMO (" + lvl + "/" + max + ")";
+            if (lvl >= max)
+            {
+                equippedOrMax = true;
+                return "MÁXIMO (" + lvl + "/" + max + ")";
+            }
             canAct = true;
-            return "Nivel " + lvl + "/" + max + " - " + e.item.prices[lvl] + " monedas";
+            return e.item.prices[lvl] + " monedas";
         }
 
         public void Refresh()
@@ -144,11 +196,14 @@ namespace Dolores1810
             if (coinsText != null) coinsText.text = "Monedas: " + PlayerProgress.Coins;
             for (int i = 0; i < entries.Count; i++)
             {
-                bool can;
-                string s = StateOf(entries[i], out can);
+                bool can, done;
+                string s = StateOf(entries[i], out can, out done);
+                entries[i].subText.text = SubInfoOf(entries[i]);
                 entries[i].stateText.text = s;
                 bool affordable = can && PriceOf(entries[i]) <= PlayerProgress.Coins;
-                entries[i].stateText.color = can ? (affordable ? UIFactory.Gold : new Color(1f, 0.55f, 0.5f, 1f)) : new Color(0.7f, 1f, 0.7f, 1f);
+                entries[i].stateText.color = done
+                    ? new Color(0.55f, 0.96f, 0.55f, 1f)
+                    : (affordable ? UIFactory.Gold : new Color(1f, 0.55f, 0.5f, 1f));
             }
             ShowDetail(selected);
         }
@@ -167,10 +222,21 @@ namespace Dolores1810
             if (index < 0 || index >= entries.Count) return;
             selected = index;
             var e = entries[index];
+            if (detailIcon != null)
+            {
+                detailIcon.sprite = e.item.icon;
+                detailIcon.gameObject.SetActive(e.item.icon != null);
+            }
             detailTitle.text = e.item.displayName;
             string extra = "";
-            if (e.item.kind == ShopKind.Weapon)
+            if (e.item.kind == ShopKind.Weapon && e.weapon != null)
                 extra = "\nDaño " + e.weapon.damage + " · Velocidad x" + e.weapon.attackSpeed.ToString("0.0") + " · Alcance x" + e.weapon.reach.ToString("0.0");
+            else
+            {
+                int lvl = PlayerProgress.GetUpgradeLevel(e.item.kind);
+                int max = PlayerProgress.MaxUpgradeLevel(e.item);
+                extra = "\nProgreso: Nivel " + lvl + " de " + max + (lvl < max ? "  (Siguiente nivel: " + e.item.prices[lvl] + " monedas)" : "  (Completada)");
+            }
             detailBody.text = e.item.description + extra;
         }
 

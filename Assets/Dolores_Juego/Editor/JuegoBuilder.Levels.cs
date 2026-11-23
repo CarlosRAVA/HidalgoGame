@@ -80,17 +80,18 @@ namespace Dolores1810.EditorTools
             for (float x = 70f; x < 760f; x += 30f) BuildLamp(x, x > 520f);
             BuildBreakables(new float[] { 30f, 54f, 88f, 125f, 140f, 175f, 205f, 240f, 270f, 276f, 320f, 345f, 355f, 372f, 405f, 415f, 440f, 452f, 466f,
                 530f, 550f, 570f, 600f, 650f, 665f, 680f, 700f, 730f, 745f });
-            BuildSpikes(194f, 5f); BuildSpikes(575f, 6f); BuildSpikes(645f, 4f); BuildSpikes(752f, 4f);
+            BuildSpikes(194f, 5f); BuildSpikes(575f, 6f); BuildSpikes(645f, 4f);
 
-            // enemigos: débiles e intermedios
+            // enemigos: débiles e intermedios; comandante al final del Nivel 1
             float[,] en = {
                 { 0, 46, 3 }, { 0, 78, 3 }, { 0, 100, 4 },
                 { 0, 128, 3 }, { 0, 145, 2 }, { 0, 168, 3 }, { 0, 182, 2 }, { 1, 232, 3 }, { 0, 262, 3 }, { 0, 282, 3 },
                 { 0, 312, 3 }, { 1, 340, 4 }, { 0, 362, 3 }, { 1, 380, 4 }, { 0, 410, 3 },
                 { 0, 445, 2 }, { 1, 462, 3 }, { 0, 495, 3 }, { 0, 520, 3 }, { 1, 555, 3 }, { 0, 575, 3 }, { 0, 600, 3 }, { 1, 625, 3 },
-                { 0, 660, 3 }, { 1, 672, 3 }, { 0, 705, 3 }, { 1, 725, 3 }, { 0, 740, 3 }
+                { 0, 660, 3 }, { 1, 672, 3 }, { 0, 705, 3 }
             };
             for (int i = 0; i < en.GetLength(0); i++) BuildKnight(en[i, 0] < 0.5f ? "soldado" : "granadero", en[i, 1], en[i, 2]);
+            BuildBoss("oficial", "Comandante realista", 748f, 720f, 764f, false);
 
             // tesoros y coleccionables
             AutoCoins(14f, 780f, 24f, 34f, new float[] { 208f, 224f, 570f, 586f, 640f, 652f, 750f, 764f });

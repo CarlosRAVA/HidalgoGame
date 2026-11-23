@@ -15,11 +15,13 @@ namespace Dolores1810
         public int staminaRecLevel;
         public int speedLevel;
         public int attackLevel;
+        public int shieldLevel;
         public List<int> completedLevels = new List<int>();
         public List<string> openedChests = new List<string>();
         public List<string> foundCollectibles = new List<string>();
         public List<string> doneMissions = new List<string>();
         public int totalKills;
+        public int savedLives = 3;
         public bool hasStarted;
         public int lastLevel = 1;
         public bool gameFinished;

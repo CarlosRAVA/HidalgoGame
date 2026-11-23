@@ -129,6 +129,8 @@ namespace Dolores1810.EditorTools
             uiGO.transform.SetParent(gMgr);
             var ui = uiGO.AddComponent<GameUI>();
             ui.heartSprite = S("Pickups/heart.png");
+            ui.shieldSprite = S("Props/shield_2.png");
+            ui.scrollSprite = S("UI/icon_pergamino.png");
             ui.coinSprite = S("Pickups/coin_0.png");
             ui.panelSprite = S("UI/panel.png");
             ui.buttonSprite = S("UI/button.png");

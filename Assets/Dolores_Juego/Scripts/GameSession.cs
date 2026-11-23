@@ -128,10 +128,15 @@ namespace Dolores1810
 
         void Start()
         {
-            Lives = startLives;
+            Lives = (PlayerProgress.Data.hasStarted && PlayerProgress.Data.savedLives > 0)
+                ? Mathf.Clamp(PlayerProgress.Data.savedLives, 1, GameRules.MaxLives)
+                : startLives;
+            PlayerProgress.SetSavedLives(Lives);
             if (startPoint != null) respawnPos = startPoint.position;
             else if (player != null) respawnPos = player.transform.position;
             PlayerProgress.MarkStarted(levelIndex);
+            PlayerProgress.SaveNow();
+            LevelObstaclesAndPuzzles.EnsureForLevel(this);
             var mm = MusicManager.Ensure();
             mm.SetSet(null, exploreClip, combatClip, bossClip, victoryClip, finalClip);
             mm.RegisterGameplay(true);
@@ -236,6 +241,8 @@ namespace Dolores1810
         public void AddLife()
         {
             Lives = Mathf.Min(GameRules.MaxLives, Lives + 1);
+            PlayerProgress.SetSavedLives(Lives);
+            PlayerProgress.SaveNow();
             RaiseStats();
         }
 
@@ -347,6 +354,9 @@ namespace Dolores1810
         {
             if (State == GameState.Victory || State == GameState.Cinematic && exiting) return;
             Lives--;
+            if (Lives > 0) PlayerProgress.SetSavedLives(Lives);
+            else PlayerProgress.SetSavedLives(startLives);
+            PlayerProgress.SaveNow();
             State = GameState.PlayerDead;
             RaiseStats();
             if (StateChanged != null) StateChanged();
@@ -391,6 +401,7 @@ namespace Dolores1810
             if (ExitShown != null) ExitShown(text);
             float t = 0f;
             while (t < 3.4f) { t += Time.unscaledDeltaTime; yield return null; }
+            PlayerProgress.SetSavedLives(Mathf.Max(1, Lives));
             PlayerProgress.CompleteLevel(levelIndex);
             LoadScene(nextScene);
         }
