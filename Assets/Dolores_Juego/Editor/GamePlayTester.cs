@@ -256,7 +256,8 @@ namespace Dolores1810.EditorTools
                 if (actualHits != expHits || actualHearts != expHearts) tableOk = false;
             }
 
-            // Probar invulnerabilidad del jugador ante golpes consecutivos rápidos
+            // Probar invulnerabilidad del jugador ante golpes consecutivos rápidos (sin escudo)
+            PlayerProgress.ResetAll();
             var pgo = new GameObject("TestPlayer_Invuln");
             pgo.AddComponent<Rigidbody2D>();
             pgo.AddComponent<BoxCollider2D>();
@@ -271,18 +272,32 @@ namespace Dolores1810.EditorTools
             int h2 = pl.Health;
 
             bool invulnWorks = hit1 && (h1 == h0 - 1) && (!hit2) && (h2 == h1);
-
             UnityEngine.Object.DestroyImmediate(pgo);
 
-            if (tableOk && invulnWorks)
+            // Probar absorción de golpe con escudo comprado
+            var shieldItem = db.FindUpgrade(ShopKind.Shield);
+            PlayerProgress.AddCoins(200);
+            bool boughtShield = shieldItem != null && PlayerProgress.TryBuyUpgrade(shieldItem);
+            var sgo = new GameObject("TestPlayer_Shield");
+            sgo.AddComponent<Rigidbody2D>();
+            sgo.AddComponent<BoxCollider2D>();
+            var spl = sgo.AddComponent<PlatformerPlayer>();
+            spl.RefreshStats(true);
+            spl.FullHeal();
+            int shBefore = spl.Health;
+            bool shieldHit = spl.TakeDamage(1, Vector2.zero);
+            bool shieldWorks = boughtShield && shieldHit && spl.Health == shBefore && spl.Shield == 0;
+            UnityEngine.Object.DestroyImmediate(sgo);
+
+            if (tableOk && invulnWorks && shieldWorks)
             {
-                RecordPass("3. Daño de enemigos según tabla y ventana de invulnerabilidad",
-                    tableDetails + "Invulnerabilidad de 1.1s previene daño múltiple en el mismo ataque.");
+                RecordPass("3. Daño de enemigos según tabla, escudo y ventana de invulnerabilidad",
+                    tableDetails + "Invulnerabilidad de 1.1s previene daño múltiple; el escudo absorbe el golpe antes de restar corazones.");
             }
             else
             {
                 RecordFail("3. Daño de enemigos según tabla y ventana de invulnerabilidad",
-                    string.Format("tableOk={0}, invulnWorks={1} (h0={2}, h1={3}, h2={4}, hit1={5}, hit2={6})", tableOk, invulnWorks, h0, h1, h2, hit1, hit2));
+                    string.Format("tableOk={0}, invulnWorks={1}, shieldWorks={2} (h0={3}, h1={4}, h2={5}, hit1={6}, hit2={7})", tableOk, invulnWorks, shieldWorks, h0, h1, h2, hit1, hit2));
             }
         }
 
@@ -385,8 +400,9 @@ namespace Dolores1810.EditorTools
         // =====================================================================================
         static void Test06_ShopSystem()
         {
-            var db = Resources.Load<GameDatabase>("GameDatabase");
+            var db = GameDatabase.I;
             var heartItem = db.FindUpgrade(ShopKind.Hearts);
+            var shieldItem = db.FindUpgrade(ShopKind.Shield);
             var swordItem = db.GetItem("arma_espada");
             var swordWeapon = db.GetWeapon("espada");
 
@@ -414,20 +430,24 @@ namespace Dolores1810.EditorTools
             bool buy3 = PlayerProgress.TryBuyUpgrade(heartItem);
             int hearts3 = PlayerProgress.GetUpgradeLevel(ShopKind.Hearts);
 
+            // Comprar escudo
+            bool buyShield = shieldItem != null && PlayerProgress.TryBuyUpgrade(shieldItem);
+            int shieldLvl = PlayerProgress.GetUpgradeLevel(ShopKind.Shield);
+
             // Comprar espada
             bool buySword = PlayerProgress.TryBuyWeapon(swordItem, swordWeapon);
             bool ownsSword = PlayerProgress.OwnsWeapon("espada");
 
-            if (!buyNoMoney && hearts0 == 0 && buy1 && hearts1 == 1 && buy2 && hearts2 == 2 && !buy3 && hearts3 == 2 && buySword && ownsSword)
+            if (!buyNoMoney && hearts0 == 0 && buy1 && hearts1 == 1 && buy2 && hearts2 == 2 && !buy3 && hearts3 == 2 && buyShield && shieldLvl == 1 && buySword && ownsSword)
             {
-                RecordPass("6. Tienda y economía: validación de saldo, descuento de monedas y tope de corazones",
-                    string.Format("Sin saldo no permite compra. Con saldo: Compra 1 (corazones={0}, saldo={1}), Compra 2 (corazones={2}, saldo={3}), Compra 3 rechazada (corazones={4}, tope=2). Compra de arma exitosa.",
-                    hearts1, coinsAfter1, hearts2, coinsAfter2, hearts3));
+                RecordPass("6. Tienda y economía: validación de saldo, descuento de monedas, escudo y tope de corazones",
+                    string.Format("Sin saldo no permite compra. Con saldo: Compra 1 (corazones={0}, saldo={1}), Compra 2 (corazones={2}, saldo={3}), Compra 3 rechazada (corazones={4}, tope=2). Compra de escudo (nivel={5}) y arma exitosa.",
+                    hearts1, coinsAfter1, hearts2, coinsAfter2, hearts3, shieldLvl));
             }
             else
             {
                 RecordFail("6. Tienda y economía: validación de saldo, descuento y tope de corazones",
-                    string.Format("buyNoMoney={0}, hearts0={1}, buy1={2}, buy2={3}, buy3={4}, hearts3={5}, buySword={6}", buyNoMoney, hearts0, buy1, buy2, buy3, hearts3, buySword));
+                    string.Format("buyNoMoney={0}, hearts0={1}, buy1={2}, buy2={3}, buy3={4}, hearts3={5}, buyShield={6}, shieldLvl={7}, buySword={8}", buyNoMoney, hearts0, buy1, buy2, buy3, hearts3, buyShield, shieldLvl, buySword));
             }
         }
 
@@ -735,7 +755,7 @@ namespace Dolores1810.EditorTools
         {
             int initialErrors = errorsLogged.Count;
 
-            string[] scenes = { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/Level1.unity", "Assets/Scenes/Level2.unity", "Assets/Scenes/Level3.unity" };
+            string[] scenes = { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/Level1.unity", "Assets/Scenes/Level2.unity", "Assets/Scenes/Level3.unity", "Assets/Scenes/Level4.unity" };
             foreach (var sc in scenes)
             {
                 EditorSceneManager.OpenScene(sc);

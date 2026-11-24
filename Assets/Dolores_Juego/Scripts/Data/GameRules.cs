@@ -4,7 +4,7 @@ namespace Dolores1810
 {
     public enum EnemyTier { Debil, Intermedio, Resistente, MuyResistente }
 
-    public enum ShopKind { Weapon, Hearts, StaminaCapacity, StaminaRecovery, Speed, Attack }
+    public enum ShopKind { Weapon, Hearts, StaminaCapacity, StaminaRecovery, Speed, Attack, Shield }
 
     /// <summary>Reglas numéricas del juego en un solo lugar.</summary>
     public static class GameRules
@@ -13,6 +13,8 @@ namespace Dolores1810
         public const int BaseWeaponDamage = 10;
         public const int BaseHearts = 5;
         public const int MaxHeartUpgrades = 2;
+        public const int MaxShieldUpgrades = 3;
+        public const float ShieldRegenBaseSeconds = 8f;
         public const int MaxLives = 9;
 
         /// <summary>Golpes necesarios (con el arma inicial) y daño en corazones por resistencia.</summary>

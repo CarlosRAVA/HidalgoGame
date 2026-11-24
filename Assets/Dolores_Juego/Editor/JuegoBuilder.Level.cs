@@ -42,7 +42,7 @@ namespace Dolores1810.EditorTools
             segs = new List<Seg>();
             reserved = new List<float[]>();
             levelIdx = index;
-            theme = index == 2 ? 1 : (index == 3 ? 2 : 0);
+            theme = index == 2 ? 1 : (index >= 3 ? 2 : 0);
 
             gGround = Group("Suelo"); gHouses = Group("Casas"); gProps = Group("Decorado"); gEnemies = Group("Enemigos");
             gItems = Group("Coleccionables"); gCheck = Group("PuntosDeControl"); gLights = Group("Luces"); gBg = Group("Fondo"); gMgr = Group("Gestores");
@@ -61,7 +61,7 @@ namespace Dolores1810.EditorTools
             fcam = camGO.AddComponent<FollowCamera>();
             globalLight = AddGlobalLight(Color.white, 1f);
 
-            LevelMeta meta = index == 1 ? Level1() : (index == 2 ? Level2() : Level3());
+            LevelMeta meta = index == 1 ? Level1() : (index == 2 ? Level2() : (index == 3 ? Level3() : Level4()));
             FinishLevel(meta);
             EditorSceneManager.SaveScene(scene, ScenesDir + "/Level" + index + ".unity");
         }
@@ -129,6 +129,8 @@ namespace Dolores1810.EditorTools
             uiGO.transform.SetParent(gMgr);
             var ui = uiGO.AddComponent<GameUI>();
             ui.heartSprite = S("Pickups/heart.png");
+            ui.shieldSprite = S("Props/shield_2.png");
+            ui.scrollSprite = S("UI/icon_pergamino.png");
             ui.coinSprite = S("Pickups/coin_0.png");
             ui.panelSprite = S("UI/panel.png");
             ui.buttonSprite = S("UI/button.png");

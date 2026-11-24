@@ -17,16 +17,16 @@ namespace Dolores1810
         public Font titleFont;
         public AudioClip menuMusic;
 
-        GameObject mainGroup, creditsPanel, levelPanel;
+        GameObject mainGroup, creditsPanel, levelPanel, controlsPanel;
         ShopUI shop;
         SettingsUI settings;
-        Button playButton, continueButton, creditsBack, levelBack;
+        Button playButton, continueButton, creditsBack, levelBack, controlsBack;
         Text coinsText;
         Image fade;
         bool loading;
 
         class Card { public Button button; public Image shade, lockIcon; public Text status; public int level; }
-        readonly Card[] cards = new Card[3];
+        readonly Card[] cards = new Card[4];
 
         void Awake()
         {
@@ -78,20 +78,43 @@ namespace Dolores1810
             var sub = UIFactory.Label(m, "Sub", "Dolores, Guanajuato · México, 1810", 36, UIFactory.Cream, TextAnchor.MiddleCenter, FontStyle.Bold);
             UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -380f), new Vector2(1700f, 50f));
 
-            Vector2 sz = new Vector2(560f, 80f);
-            playButton = UIFactory.MakeButton(m, "Jugar", new Vector2(0f, 90f), sz, () => StartLevel(1));
-            continueButton = UIFactory.MakeButton(m, "Continuar partida", new Vector2(0f, 0f), sz, () => StartLevel(PlayerProgress.ContinueLevel()));
-            UIFactory.MakeButton(m, "Seleccionar nivel", new Vector2(0f, -90f), sz, ShowLevels);
-            UIFactory.MakeButton(m, "Tienda y mejoras", new Vector2(0f, -180f), sz, ShowShop);
+            Vector2 sz = new Vector2(540f, 70f);
+            playButton = UIFactory.MakeButton(m, "Jugar", new Vector2(0f, 100f), sz, () => { PlayerProgress.SetSavedLives(3); StartLevel(1); });
+            continueButton = UIFactory.MakeButton(m, "Continuar partida", new Vector2(0f, 26f), sz, () => StartLevel(PlayerProgress.ContinueLevel()));
+            UIFactory.MakeButton(m, "Seleccionar nivel", new Vector2(0f, -48f), sz, ShowLevels);
+            UIFactory.MakeButton(m, "Tienda y mejoras", new Vector2(0f, -122f), sz, ShowShop);
+            UIFactory.MakeButton(m, "Controles", new Vector2(0f, -196f), sz, ShowControls);
             UIFactory.MakeButton(m, "Configuración", new Vector2(0f, -270f), sz, ShowSettings);
-            UIFactory.MakeButton(m, "Créditos", new Vector2(0f, -360f), sz, ShowCredits);
-            UIFactory.MakeButton(m, "Salir", new Vector2(0f, -450f), sz, Quit);
+            UIFactory.MakeButton(m, "Créditos", new Vector2(0f, -344f), sz, ShowCredits);
+            UIFactory.MakeButton(m, "Salir", new Vector2(0f, -418f), sz, Quit);
+
+            BuildControlsCard(m);
 
             UIFactory.Icon(m, "IconoMoneda", coinSprite, new Vector2(1f, 1f), new Vector2(-300f, -30f), new Vector2(54f, 54f));
             coinsText = UIFactory.Label(m, "Monedas", "x 0", 44, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             UIFactory.Place(coinsText.rectTransform, new Vector2(1f, 1f), new Vector2(-236f, -30f), new Vector2(220f, 54f));
 
             BuildLevelPanel(root);
+            controlsPanel = BuildInfoPanel(root, "PanelControles", "CONTROLES Y MECÁNICAS",
+                "<b><color=#8A4B14>TECLADO Y RATÓN</color></b>\n" +
+                "• <b>Moverse:</b> A / D o Flechas   ·   <b>Correr:</b> SHIFT (consume resistencia)\n" +
+                "• <b>Saltar:</b> ESPACIO o W   ·   <b>Trepar escaleras:</b> W / S\n" +
+                "• <b>Atacar:</b> J, Z, X o Clic izquierdo\n" +
+                "• <b>Interactuar (tienda, cofres, palancas, puzzles):</b> E\n" +
+                "• <b>Cambiar arma:</b> Q o teclas 1 - 5   ·   <b>Pausa:</b> ESC o P\n\n" +
+                "<b><color=#8A4B14>CONTROL (GAMEPAD)</color></b>\n" +
+                "• <b>Mover / Trepar:</b> Stick izquierdo o Cruceta   ·   <b>Saltar:</b> Botón A\n" +
+                "• <b>Atacar:</b> X / B / RT   ·   <b>Correr:</b> LT / LB\n" +
+                "• <b>Interactuar:</b> Y   ·   <b>Cambiar arma:</b> RB   ·   <b>Pausa:</b> START\n\n" +
+                "<b><color=#8A4B14>CONSEJOS DE AVENTURA</color></b>\n" +
+                "• Compra el <b>Escudo insurgente</b> en la tienda para absorber golpes enemigos.\n" +
+                "• Esquiva trampas de fuego, pinchos móviles y resuelve los acertijos con E para abrir rejas con recompensas.", out controlsBack);
+            var ctrlTxt = controlsPanel.transform.Find("Texto");
+            if (ctrlTxt != null)
+            {
+                var tComp = ctrlTxt.GetComponent<Text>();
+                if (tComp != null) tComp.fontSize = 28;
+            }
             creditsPanel = BuildInfoPanel(root, "Creditos", "CRÉDITOS",
                 "<b>1810: El Grito de la Libertad</b>\nJuego de plataformas en Unity.\n\n" +
                 "<b>Arte</b>: personaje Body_A (Pixel Crawler) y paquetes de Craftpix.net: Fantasy Knight, Medieval Training Arena, " +
@@ -117,32 +140,61 @@ namespace Dolores1810
             UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 385f), new Vector2(1400f, 100f));
 
             var db = GameDatabase.I;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 int lv = i + 1;
-                float x = -580f + i * 580f;
+                float x = -622.5f + i * 415f;
                 var info = db != null ? db.GetLevel(lv) : null;
-                var cardBack = UIFactory.Box(t, "Tarjeta" + lv, new Color(0.3f, 0.18f, 0.08f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 640f));
-                UIFactory.PlaceCenter(cardBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 20f), new Vector2(520f, 640f));
-                var thumb = UIFactory.Icon(t, "Miniatura" + lv, info != null ? info.thumbnail : null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(480f, 270f));
-                UIFactory.PlaceCenter(thumb.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(480f, 270f));
+                var cardBack = UIFactory.Box(t, "Tarjeta" + lv, new Color(0.3f, 0.18f, 0.08f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(395f, 640f));
+                UIFactory.PlaceCenter(cardBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 20f), new Vector2(395f, 640f));
+                var thumb = UIFactory.Icon(t, "Miniatura" + lv, info != null ? info.thumbnail : null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 210f));
+                UIFactory.PlaceCenter(thumb.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(360f, 210f));
                 thumb.preserveAspect = false;
-                var shade = UIFactory.Box(t, "Sombra" + lv, new Color(0f, 0f, 0f, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(480f, 270f));
-                UIFactory.PlaceCenter(shade.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(480f, 270f));
-                var lockI = UIFactory.Icon(t, "Candado" + lv, lockSprite, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(120f, 120f));
-                UIFactory.PlaceCenter(lockI.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(120f, 120f));
-                var nm = UIFactory.Label(t, "Nombre" + lv, info != null ? info.title : "Nivel " + lv, 36, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-                UIFactory.PlaceCenter(nm.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 60f), new Vector2(500f, 90f));
-                var ds = UIFactory.Label(t, "Descripcion" + lv, info != null ? info.description : "", 28, UIFactory.Ink, TextAnchor.UpperCenter, FontStyle.Normal, false);
-                UIFactory.PlaceCenter(ds.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -70f), new Vector2(480f, 160f));
-                var st = UIFactory.Label(t, "Estado" + lv, "", 30, new Color(0.45f, 0.25f, 0.05f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
-                UIFactory.PlaceCenter(st.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -170f), new Vector2(500f, 50f));
-                var btn = UIFactory.MakeButton(t, "Comenzar", new Vector2(x, -250f), new Vector2(380f, 80f), () => StartLevel(lv));
+                var shade = UIFactory.Box(t, "Sombra" + lv, new Color(0f, 0f, 0f, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 210f));
+                UIFactory.PlaceCenter(shade.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(360f, 210f));
+                var lockI = UIFactory.Icon(t, "Candado" + lv, lockSprite, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(105f, 105f));
+                UIFactory.PlaceCenter(lockI.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(105f, 105f));
+                var nm = UIFactory.Label(t, "Nombre" + lv, info != null ? info.title : "Nivel " + lv, 30, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(nm.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 72f), new Vector2(372f, 84f));
+                var ds = UIFactory.Label(t, "Descripcion" + lv, info != null ? info.description : "", 23, UIFactory.Ink, TextAnchor.UpperCenter, FontStyle.Normal, false);
+                UIFactory.PlaceCenter(ds.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -60f), new Vector2(366f, 165f));
+                var st = UIFactory.Label(t, "Estado" + lv, "", 24, new Color(0.45f, 0.25f, 0.05f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(st.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -170f), new Vector2(372f, 48f));
+                var btn = UIFactory.MakeButton(t, "Comenzar", new Vector2(x, -250f), new Vector2(330f, 76f), () => StartLevel(lv));
                 var c = new Card(); c.button = btn; c.shade = shade; c.lockIcon = lockI; c.status = st; c.level = lv;
                 cards[i] = c;
             }
             levelBack = UIFactory.MakeButton(t, "Volver", new Vector2(0f, -400f), new Vector2(360f, 80f), OnSubBack);
             levelPanel.SetActive(false);
+        }
+
+        void BuildControlsCard(Transform parent)
+        {
+            var card = UIFactory.Box(parent, "ControlesResumen", new Color(0.14f, 0.08f, 0.04f, 0.88f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(560f, 500f));
+            UIFactory.PlaceCenter(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-620f, -170f), new Vector2(560f, 500f));
+            UIFactory.Box(card.transform, "BordeSup", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 1f), Vector2.zero, new Vector2(560f, 3f));
+            UIFactory.Box(card.transform, "BordeIzq", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 0f), Vector2.zero, new Vector2(5f, 500f));
+
+            var hdr = UIFactory.Label(card.transform, "Titulo", "CONTROLES", 32, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.Place(hdr.rectTransform, new Vector2(0f, 1f), new Vector2(16f, -12f), new Vector2(528f, 44f));
+            UIFactory.Box(card.transform, "Linea", new Color(0.92f, 0.72f, 0.24f, 0.5f), new Vector2(0f, 1f), new Vector2(20f, -60f), new Vector2(520f, 2f));
+
+            string[] lines =
+            {
+                "<color=#FFD152><b>Moverse:</b></color>  [A / D] o [Flechas] · Stick",
+                "<color=#FFD152><b>Correr:</b></color>  [SHIFT] (resistencia) · [LT/LB]",
+                "<color=#FFD152><b>Saltar:</b></color>  [ESPACIO] / [W] · Botón [A]",
+                "<color=#FFD152><b>Atacar:</b></color>  [J / Z / X] o [Clic] · [X / B]",
+                "<color=#FFD152><b>Interactuar:</b></color>  [E] (tienda/puzzles) · [Y]",
+                "<color=#FFD152><b>Escalar:</b></color>  [W / S] (en escaleras) · Stick",
+                "<color=#FFD152><b>Cambiar arma:</b></color>  [Q] o [1 - 5] · [RB]",
+                "<color=#FFD152><b>Pausa:</b></color>  [ESC / P] · [START]"
+            };
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var row = UIFactory.Label(card.transform, "Ctrl_" + i, lines[i], 23, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Normal, false);
+                UIFactory.Place(row.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -74f - i * 51f), new Vector2(516f, 44f));
+            }
         }
 
         GameObject BuildInfoPanel(Transform root, string name, string title, string body, out Button back)
@@ -188,11 +240,13 @@ namespace Dolores1810
 
         void ShowShop() { shop.Show(); }
         void ShowSettings() { settings.Show(); }
+        void ShowControls() { controlsPanel.SetActive(true); UIFactory.Select(controlsBack); }
         void ShowCredits() { creditsPanel.SetActive(true); UIFactory.Select(creditsBack); }
 
         void OnSubBack()
         {
             creditsPanel.SetActive(false);
+            controlsPanel.SetActive(false);
             levelPanel.SetActive(false);
             if (settings != null) settings.gameObject.SetActive(false);
             if (shop != null) shop.gameObject.SetActive(false);
@@ -202,7 +256,7 @@ namespace Dolores1810
 
         void Update()
         {
-            bool sub = creditsPanel.activeSelf || levelPanel.activeSelf || settings.gameObject.activeSelf || shop.gameObject.activeSelf;
+            bool sub = creditsPanel.activeSelf || controlsPanel.activeSelf || levelPanel.activeSelf || settings.gameObject.activeSelf || shop.gameObject.activeSelf;
             if (sub && GameInput.PauseDown()) OnSubBack();
         }
 

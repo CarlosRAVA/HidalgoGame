@@ -137,8 +137,8 @@ namespace Dolores1810
             if (outline)
             {
                 var o = rt.gameObject.AddComponent<Outline>();
-                o.effectColor = new Color(0.1f, 0.05f, 0.02f, 0.9f);
-                o.effectDistance = new Vector2(2.5f, -2.5f);
+                o.effectColor = new Color(0.08f, 0.04f, 0.01f, 0.85f);
+                o.effectDistance = new Vector2(1.2f, -1.2f);
             }
             return t;
         }
@@ -155,9 +155,9 @@ namespace Dolores1810
             b.targetGraphic = img;
             var cb = b.colors;
             cb.normalColor = Color.white;
-            cb.highlightedColor = new Color(1f, 0.92f, 0.72f, 1f);
-            cb.selectedColor = new Color(1f, 0.88f, 0.55f, 1f);
-            cb.pressedColor = new Color(0.78f, 0.68f, 0.58f, 1f);
+            cb.highlightedColor = new Color(0.68f, 0.52f, 0.38f, 1f);
+            cb.selectedColor = new Color(0.58f, 0.42f, 0.28f, 1f);
+            cb.pressedColor = new Color(0.45f, 0.32f, 0.20f, 1f);
             cb.disabledColor = new Color(0.45f, 0.42f, 0.4f, 0.8f);
             cb.fadeDuration = 0.08f;
             b.colors = cb;

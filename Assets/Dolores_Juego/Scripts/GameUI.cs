@@ -14,20 +14,40 @@ namespace Dolores1810
         public static GameUI I;
 
         public Sprite heartSprite;
+        public Sprite shieldSprite;
+        public Sprite scrollSprite;
         public Sprite coinSprite;
         public Sprite panelSprite;
         public Sprite buttonSprite;
         public Font font;
         public Font titleFont;
 
+        class MissionCardUI
+        {
+            public GameObject root;
+            public Image cardBg, accent, iconBg, icon, barFill;
+            public Text catText, rewardText, titleText, progressText;
+        }
+
+        class HudMissionRowUI
+        {
+            public GameObject root;
+            public Image barFill;
+            public Text badgeText, titleText, countText;
+        }
+
         Canvas canvas;
         Image[] hearts;
+        Image[] shields;
         Image staminaFill, weaponIcon, bossFill;
         Text livesText, coinsText, scoreText, timeText, zoneTitle, zoneSub, toastText, hintText, objectiveText, weaponText, promptText;
-        Text bossName, introTitle, introSub, exitText, victoryStats, pauseMissions;
-        CanvasGroup zoneGroup, toastGroup, hintGroup, promptGroup, bossGroup, introGroup, exitGroup, objectiveGroup;
+        Text bossName, introTitle, introSub, exitText, victoryStats, pauseMissionSummary, hudMissionSummary;
+        CanvasGroup zoneGroup, toastGroup, hintGroup, promptGroup, bossGroup, introGroup, exitGroup, objectiveGroup, hudMissionsGroup;
         RectTransform barTop, barBottom, staminaBack;
         GameObject pausePanel, gameOverPanel, victoryPanel;
+        MissionCardUI[] pauseMissionCards;
+        HudMissionRowUI[] hudMissionRows;
+        Sprite cachedShieldSprite, cachedScrollSprite;
         ShopUI shop;
         SettingsUI settings;
         Image fade, flash;
@@ -131,16 +151,51 @@ namespace Dolores1810
             UIFactory.Place(livesText.rectTransform, new Vector2(0f, 1f), new Vector2(330f, -222f), new Vector2(260f, 52f));
 
             scoreText = UIFactory.Label(root, "Puntos", "PUNTOS 000000", 44, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold);
-            UIFactory.Place(scoreText.rectTransform, new Vector2(1f, 1f), new Vector2(-44f, -52f), new Vector2(700f, 58f));
+            UIFactory.Place(scoreText.rectTransform, new Vector2(1f, 1f), new Vector2(-44f, -38f), new Vector2(700f, 54f));
             timeText = UIFactory.Label(root, "Tiempo", "00:00", 32, new Color(1f, 1f, 1f, 0.85f), TextAnchor.MiddleRight, FontStyle.Bold);
-            UIFactory.Place(timeText.rectTransform, new Vector2(1f, 1f), new Vector2(-44f, -104f), new Vector2(400f, 40f));
+            UIFactory.Place(timeText.rectTransform, new Vector2(1f, 1f), new Vector2(-44f, -94f), new Vector2(400f, 38f));
+
+            // Tracker de misiones en HUD
+            var hmr = UIFactory.Rect("MisionesHUD", root);
+            UIFactory.Place(hmr, new Vector2(1f, 1f), new Vector2(-36f, -148f), new Vector2(456f, 232f));
+            hudMissionsGroup = Group(hmr, 0f);
+            UIFactory.FullScreen(hmr, "Fondo", new Color(0.12f, 0.07f, 0.04f, 0.78f));
+            UIFactory.Box(hmr, "Borde", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 0f), Vector2.zero, new Vector2(4f, 232f));
+            var hmh = UIFactory.Label(hmr, "Titulo", "MISIONES DEL NIVEL", 20, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.Place(hmh.rectTransform, new Vector2(0f, 1f), new Vector2(14f, -6f), new Vector2(320f, 30f));
+            hudMissionSummary = UIFactory.Label(hmr, "Conteo", "0/4", 20, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold, false);
+            UIFactory.Place(hudMissionSummary.rectTransform, new Vector2(1f, 1f), new Vector2(-12f, -6f), new Vector2(100f, 30f));
+            UIFactory.Box(hmr, "Linea", new Color(0.92f, 0.72f, 0.24f, 0.55f), new Vector2(0f, 1f), new Vector2(12f, -38f), new Vector2(432f, 1.5f));
+            hudMissionRows = new HudMissionRowUI[4];
+            for (int i = 0; i < 4; i++)
+            {
+                var rowRt = UIFactory.Rect("Fila_" + i, hmr);
+                UIFactory.Place(rowRt, new Vector2(0f, 1f), new Vector2(12f, -44f - i * 45f), new Vector2(432f, 42f));
+                var row = new HudMissionRowUI();
+                row.root = rowRt.gameObject;
+                row.badgeText = UIFactory.Label(rowRt, "Estado", "[•]", 19, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+                UIFactory.Place(row.badgeText.rectTransform, new Vector2(0f, 1f), new Vector2(0f, -1f), new Vector2(36f, 25f));
+                row.titleText = UIFactory.Label(rowRt, "Nombre", "", 19, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+                UIFactory.Place(row.titleText.rectTransform, new Vector2(0f, 1f), new Vector2(36f, -1f), new Vector2(326f, 25f));
+                row.countText = UIFactory.Label(rowRt, "Progreso", "", 18, UIFactory.Gold, TextAnchor.MiddleRight, FontStyle.Bold, false);
+                UIFactory.Place(row.countText.rectTransform, new Vector2(1f, 1f), new Vector2(0f, -1f), new Vector2(68f, 25f));
+                Image hbf;
+                UIFactory.MakeBar(rowRt, "Barra", UIFactory.Gold, new Vector2(0f, 1f), new Vector2(0f, -28f), new Vector2(432f, 11f), out hbf);
+                row.barFill = hbf;
+                hudMissionRows[i] = row;
+            }
 
             // Objetivo
             var orr = UIFactory.Rect("Objetivo", root);
-            UIFactory.PlaceCenter(orr, new Vector2(0.5f, 1f), new Vector2(0f, -36f), new Vector2(1100f, 50f));
+            UIFactory.PlaceCenter(orr, new Vector2(0.5f, 1f), new Vector2(0f, -47f), new Vector2(640f, 54f));
             objectiveGroup = Group(orr, 0f);
-            objectiveText = UIFactory.Label(orr, "Texto", "", 34, new Color(1f, 0.95f, 0.7f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIFactory.FullScreen(orr, "Fondo", new Color(0.14f, 0.08f, 0.04f, 0.84f));
+            UIFactory.Box(orr, "BordeSup", new Color(0.95f, 0.76f, 0.28f, 0.9f), new Vector2(0f, 1f), Vector2.zero, new Vector2(640f, 2.5f));
+            UIFactory.Box(orr, "BordeInf", new Color(0.95f, 0.76f, 0.28f, 0.9f), new Vector2(0f, 0f), Vector2.zero, new Vector2(640f, 2.5f));
+            objectiveText = UIFactory.Label(orr, "Texto", "", 27, new Color(1f, 0.95f, 0.72f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
             UIFactory.Stretch(objectiveText.rectTransform);
+            objectiveText.rectTransform.offsetMin = new Vector2(18f, 2f);
+            objectiveText.rectTransform.offsetMax = new Vector2(-18f, -2f);
 
             // Barra de jefe
             var br = UIFactory.Rect("Jefe", root);
@@ -221,14 +276,77 @@ namespace Dolores1810
             fade = UIFactory.FullScreen(root, "Fundido", new Color(0f, 0f, 0f, 1f));
         }
 
+        Sprite GetShieldSprite()
+        {
+            if (shieldSprite != null) return shieldSprite;
+            if (cachedShieldSprite != null) return cachedShieldSprite;
+            var db = GameDatabase.I;
+            var sh = db != null ? db.FindUpgrade(ShopKind.Shield) : null;
+            if (sh != null && sh.icon != null) cachedShieldSprite = sh.icon;
+            else cachedShieldSprite = heartSprite;
+            return cachedShieldSprite;
+        }
+
+        Sprite GetScrollSprite()
+        {
+            if (scrollSprite != null) return scrollSprite;
+            if (cachedScrollSprite != null) return cachedScrollSprite;
+            var col = FindAnyObjectByType<Collectible>();
+            if (col != null)
+            {
+                var sr = col.GetComponent<SpriteRenderer>();
+                if (sr != null && sr.sprite != null) cachedScrollSprite = sr.sprite;
+            }
+            if (cachedScrollSprite == null) cachedScrollSprite = coinSprite;
+            return cachedScrollSprite;
+        }
+
+        Sprite GetMissionIcon(MissionKind kind)
+        {
+            var db = GameDatabase.I;
+            switch (kind)
+            {
+                case MissionKind.Kills:
+                    var esp = db != null ? db.GetWeapon("espada") : null;
+                    return esp != null && esp.icon != null ? esp.icon : coinSprite;
+                case MissionKind.Break:
+                    var hac = db != null ? db.GetWeapon("hacha") : null;
+                    return hac != null && hac.icon != null ? hac.icon : coinSprite;
+                case MissionKind.Chests:
+                    return coinSprite;
+                case MissionKind.Collect:
+                    return GetScrollSprite();
+            }
+            return coinSprite;
+        }
+
+        static string MissionCategoryName(MissionKind kind)
+        {
+            switch (kind)
+            {
+                case MissionKind.Kills: return "COMBATE";
+                case MissionKind.Break: return "DESTRUCCIÓN";
+                case MissionKind.Chests: return "TESOROS";
+                case MissionKind.Collect: return "HISTORIA";
+            }
+            return "MISIÓN";
+        }
+
         void BuildHearts()
         {
             int n = 7;
             hearts = new Image[n];
             for (int i = 0; i < n; i++)
             {
-                hearts[i] = UIFactory.Icon(canvas.transform, "Corazon" + i, heartSprite, new Vector2(0f, 1f), new Vector2(44f + i * 64f, -40f), new Vector2(58f, 58f));
+                hearts[i] = UIFactory.Icon(canvas.transform, "Corazon" + i, heartSprite, new Vector2(0f, 1f), new Vector2(36f + i * 56f, -34f), new Vector2(52f, 52f));
                 hearts[i].gameObject.SetActive(false);
+            }
+            shields = new Image[GameRules.MaxShieldUpgrades];
+            Sprite shSp = GetShieldSprite();
+            for (int i = 0; i < shields.Length; i++)
+            {
+                shields[i] = UIFactory.Icon(canvas.transform, "Escudo" + i, shSp, new Vector2(0f, 1f), new Vector2(36f + i * 52f, -36f), new Vector2(48f, 48f));
+                shields[i].gameObject.SetActive(false);
             }
         }
 
@@ -241,21 +359,53 @@ namespace Dolores1810
 
         void BuildPause(Transform root)
         {
-            pausePanel = MakeOverlay(root, "Pausa", new Color(0f, 0f, 0f, 0.62f));
+            pausePanel = MakeOverlay(root, "Pausa", new Color(0f, 0f, 0f, 0.68f));
             Transform t = pausePanel.transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1280f, 880f));
-            var title = UIFactory.Label(t, "Titulo", "PAUSA", 110, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Normal, false, titleFont);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 340f), new Vector2(900f, 130f));
-            pauseFirst = UIFactory.MakeButton(t, "Continuar", new Vector2(-330f, 160f), new Vector2(520f, 96f), () => GameSession.I.SetPaused(false));
-            UIFactory.MakeButton(t, "Reiniciar nivel", new Vector2(-330f, 40f), new Vector2(520f, 96f), () => GameSession.I.Restart());
-            UIFactory.MakeButton(t, "Configuración", new Vector2(-330f, -80f), new Vector2(520f, 96f), OpenSettings);
-            UIFactory.MakeButton(t, "Menú principal", new Vector2(-330f, -200f), new Vector2(520f, 96f), () => GameSession.I.GoMenu());
-            var mh = UIFactory.Label(t, "MisionesTitulo", "MISIONES DEL NIVEL", 36, UIFactory.Ink, TextAnchor.MiddleLeft, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(mh.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(250f, 190f), new Vector2(560f, 50f));
-            pauseMissions = UIFactory.Label(t, "Misiones", "", 32, UIFactory.Ink, TextAnchor.UpperLeft, FontStyle.Normal, false);
-            UIFactory.PlaceCenter(pauseMissions.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(250f, 50f), new Vector2(560f, 240f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1380f, 900f));
+            var title = UIFactory.Label(t, "Titulo", "PAUSA", 104, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Normal, false, titleFont);
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 355f), new Vector2(900f, 120f));
+            pauseFirst = UIFactory.MakeButton(t, "Continuar", new Vector2(-400f, 180f), new Vector2(480f, 92f), () => GameSession.I.SetPaused(false));
+            UIFactory.MakeButton(t, "Reiniciar nivel", new Vector2(-400f, 65f), new Vector2(480f, 92f), () => GameSession.I.Restart());
+            UIFactory.MakeButton(t, "Configuración", new Vector2(-400f, -50f), new Vector2(480f, 92f), OpenSettings);
+            UIFactory.MakeButton(t, "Menú principal", new Vector2(-400f, -165f), new Vector2(480f, 92f), () => GameSession.I.GoMenu());
+
+            var board = UIFactory.Box(t, "TableroMisiones", new Color(0.22f, 0.13f, 0.06f, 0.95f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(710f, 545f));
+            UIFactory.PlaceCenter(board.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(245f, 10f), new Vector2(710f, 545f));
+            var header = UIFactory.Box(board.transform, "Encabezado", new Color(0.14f, 0.08f, 0.04f, 0.98f), new Vector2(0f, 1f), Vector2.zero, new Vector2(710f, 56f));
+            UIFactory.Box(header.transform, "LineaOro", new Color(0.9f, 0.7f, 0.25f, 0.85f), new Vector2(0f, 0f), Vector2.zero, new Vector2(710f, 3f));
+            var mh = UIFactory.Label(header.transform, "MisionesTitulo", "MISIONES DEL NIVEL", 30, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.Place(mh.rectTransform, new Vector2(0f, 1f), new Vector2(20f, -6f), new Vector2(410f, 44f));
+            pauseMissionSummary = UIFactory.Label(header.transform, "Resumen", "0 / 4 COMPLETADAS", 22, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold, false);
+            UIFactory.Place(pauseMissionSummary.rectTransform, new Vector2(1f, 1f), new Vector2(-18f, -6f), new Vector2(260f, 44f));
+
+            pauseMissionCards = new MissionCardUI[4];
+            for (int i = 0; i < 4; i++)
+            {
+                var cardBg = UIFactory.Box(board.transform, "TarjetaMision_" + i, new Color(0.31f, 0.19f, 0.1f, 0.96f), new Vector2(0.5f, 1f), new Vector2(0f, -68f - i * 118f), new Vector2(674f, 108f));
+                var c = new MissionCardUI();
+                c.root = cardBg.gameObject;
+                c.cardBg = cardBg;
+                c.accent = UIFactory.Box(cardBg.transform, "Franja", UIFactory.Gold, new Vector2(0f, 0f), Vector2.zero, new Vector2(8f, 108f));
+                c.iconBg = UIFactory.Box(cardBg.transform, "IconoFondo", new Color(0.15f, 0.08f, 0.04f, 0.9f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(76f, 76f));
+                UIFactory.PlaceCenter(c.iconBg.rectTransform, new Vector2(0f, 0.5f), new Vector2(58f, 0f), new Vector2(76f, 76f));
+                c.icon = UIFactory.Icon(c.iconBg.transform, "Icono", null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(58f, 58f));
+                UIFactory.PlaceCenter(c.icon.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(58f, 58f));
+                c.catText = UIFactory.Label(cardBg.transform, "Categoria", "", 18, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+                UIFactory.Place(c.catText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -8f), new Vector2(250f, 24f));
+                c.rewardText = UIFactory.Label(cardBg.transform, "Recompensa", "", 19, UIFactory.Gold, TextAnchor.MiddleRight, FontStyle.Bold, false);
+                UIFactory.Place(c.rewardText.rectTransform, new Vector2(1f, 1f), new Vector2(-16f, -8f), new Vector2(270f, 24f));
+                c.titleText = UIFactory.Label(cardBg.transform, "Titulo", "", 25, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+                UIFactory.Place(c.titleText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -34f), new Vector2(545f, 34f));
+                Image pbf;
+                UIFactory.MakeBar(cardBg.transform, "Barra", UIFactory.Gold, new Vector2(0f, 1f), new Vector2(110f, -74f), new Vector2(440f, 18f), out pbf);
+                c.barFill = pbf;
+                c.progressText = UIFactory.Label(cardBg.transform, "Progreso", "", 22, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold, false);
+                UIFactory.Place(c.progressText.rectTransform, new Vector2(1f, 1f), new Vector2(-16f, -68f), new Vector2(104f, 30f));
+                pauseMissionCards[i] = c;
+            }
+
             var tip = UIFactory.Label(t, "Controles", "A/D mover · SHIFT correr · ESPACIO saltar · J atacar\nE interactuar · W/S trepar · Q o 1-5 cambiar arma", 28, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(tip.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -340f), new Vector2(1150f, 100f));
+            UIFactory.PlaceCenter(tip.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -355f), new Vector2(1240f, 96f));
             pausePanel.SetActive(false);
         }
 
@@ -303,6 +453,21 @@ namespace Dolores1810
                 hearts[i].gameObject.SetActive(visible);
                 if (visible) hearts[i].color = i < hp ? Color.white : new Color(0.2f, 0.2f, 0.2f, 0.65f);
             }
+            if (shields != null)
+            {
+                int curS = pl != null ? pl.Shield : 0;
+                int maxS = pl != null ? pl.MaxShield : PlayerStats.MaxShield;
+                for (int i = 0; i < shields.Length; i++)
+                {
+                    bool visible = i < maxS;
+                    shields[i].gameObject.SetActive(visible);
+                    if (visible)
+                    {
+                        shields[i].rectTransform.anchoredPosition = new Vector2(36f + max * 56f + 10f + i * 52f, -36f);
+                        shields[i].color = i < curS ? new Color(0.75f, 0.92f, 1f, 1f) : new Color(0.2f, 0.25f, 0.35f, 0.55f);
+                    }
+                }
+            }
             livesText.text = "Vidas: " + gs.Lives;
             coinsText.text = "x " + PlayerProgress.Coins;
             scoreText.text = "PUNTOS " + gs.Score.ToString("D6");
@@ -312,6 +477,70 @@ namespace Dolores1810
                 weaponIcon.sprite = w.icon;
                 weaponText.text = w.displayName + "  (daño " + pl.CurrentDamage() + ")";
             }
+            RefreshMissions(gs);
+        }
+
+        void RefreshMissions(GameSession gs)
+        {
+            var list = gs != null ? gs.missions : null;
+            int total = list != null ? list.Length : 0;
+            int doneCount = gs != null ? gs.MissionsDoneCount() : 0;
+            Color greenAccent = new Color(0.38f, 0.92f, 0.48f, 1f);
+            Color greenText = new Color(0.72f, 1f, 0.74f, 1f);
+            Color activeBg = new Color(0.31f, 0.19f, 0.1f, 0.96f);
+            Color doneBg = new Color(0.14f, 0.3f, 0.17f, 0.96f);
+
+            if (hudMissionSummary != null) hudMissionSummary.text = doneCount + "/" + total;
+            if (hudMissionRows != null)
+            {
+                for (int i = 0; i < hudMissionRows.Length; i++)
+                {
+                    var r = hudMissionRows[i];
+                    if (r == null) continue;
+                    bool show = i < total && list[i] != null;
+                    r.root.SetActive(show);
+                    if (!show) continue;
+                    var m = list[i];
+                    float frac = m.done ? 1f : (m.target > 0 ? Mathf.Clamp01((float)m.progress / m.target) : 0f);
+                    r.badgeText.text = m.done ? "[✓]" : "[•]";
+                    r.badgeText.color = m.done ? greenAccent : UIFactory.Gold;
+                    r.titleText.text = m.text;
+                    r.titleText.color = m.done ? greenText : UIFactory.Cream;
+                    r.countText.text = m.done ? "LISTA" : (m.progress + "/" + m.target);
+                    r.countText.color = m.done ? greenAccent : UIFactory.Gold;
+                    r.barFill.color = m.done ? greenAccent : UIFactory.Gold;
+                    UIFactory.SetBar(r.barFill, frac);
+                }
+            }
+
+            if (pauseMissionSummary != null) pauseMissionSummary.text = doneCount + " / " + total + " COMPLETADAS";
+            if (pauseMissionCards != null)
+            {
+                for (int i = 0; i < pauseMissionCards.Length; i++)
+                {
+                    var c = pauseMissionCards[i];
+                    if (c == null) continue;
+                    bool show = i < total && list[i] != null;
+                    c.root.SetActive(show);
+                    if (!show) continue;
+                    var m = list[i];
+                    float frac = m.done ? 1f : (m.target > 0 ? Mathf.Clamp01((float)m.progress / m.target) : 0f);
+                    c.cardBg.color = m.done ? doneBg : activeBg;
+                    c.accent.color = m.done ? greenAccent : UIFactory.Gold;
+                    c.icon.sprite = GetMissionIcon(m.kind);
+                    c.icon.color = m.done ? greenText : Color.white;
+                    c.catText.text = MissionCategoryName(m.kind);
+                    c.catText.color = m.done ? greenAccent : UIFactory.Gold;
+                    c.rewardText.text = m.done ? "¡COMPLETADA!" : ("+" + m.reward + " monedas");
+                    c.rewardText.color = m.done ? greenAccent : UIFactory.Gold;
+                    c.titleText.text = m.text;
+                    c.titleText.color = m.done ? greenText : UIFactory.Cream;
+                    c.barFill.color = m.done ? greenAccent : UIFactory.Gold;
+                    UIFactory.SetBar(c.barFill, frac);
+                    c.progressText.text = m.done ? (m.target + " / " + m.target) : (m.progress + " / " + m.target);
+                    c.progressText.color = m.done ? greenAccent : UIFactory.Cream;
+                }
+            }
         }
 
         void OnStateChanged()
@@ -319,7 +548,7 @@ namespace Dolores1810
             var gs = GameSession.I;
             if (gs == null) return;
             pausePanel.SetActive(gs.State == GameState.Paused && !settings.gameObject.activeSelf);
-            if (gs.State == GameState.Paused) pauseMissions.text = gs.MissionLines();
+            if (gs.State == GameState.Paused) RefreshMissions(gs);
             gameOverPanel.SetActive(gs.State == GameState.GameOver);
             bool showShop = gs.State == GameState.Shop;
             if (showShop && !shop.gameObject.activeSelf) shop.Show();
@@ -408,16 +637,14 @@ namespace Dolores1810
         {
             bossName.text = name;
             UIFactory.SetBar(bossFill, 1f);
-            bossShown = true;
         }
-        bool bossShown;
 
         void OnBossHealth(int cur, int max)
         {
             UIFactory.SetBar(bossFill, max > 0 ? (float)cur / max : 0f);
         }
 
-        void OnBossEnd() { bossShown = false; }
+        void OnBossEnd() { }
 
         void OnIntro(string title, string subtitle)
         {
@@ -481,7 +708,13 @@ namespace Dolores1810
 
             bool playing = gs != null && (gs.State == GameState.Playing || gs.State == GameState.PlayerDead);
             objectiveGroup.alpha = Mathf.MoveTowards(objectiveGroup.alpha, playing && !string.IsNullOrEmpty(objectiveText.text) ? 1f : 0f, dt * 3f);
-            bossGroup.alpha = Mathf.MoveTowards(bossGroup.alpha, bossShown && playing ? 1f : 0f, dt * 3f);
+            if (hudMissionsGroup != null)
+            {
+                bool hasMissions = gs != null && gs.missions != null && gs.missions.Length > 0;
+                float targetHudMissions = playing && hasMissions ? (zoneTimer > 0f ? 0.35f : 1f) : 0f;
+                hudMissionsGroup.alpha = Mathf.MoveTowards(hudMissionsGroup.alpha, targetHudMissions, dt * 3f);
+            }
+            bossGroup.alpha = 0f;
 
             if (introActive || exitShown)
             {

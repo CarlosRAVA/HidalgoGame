@@ -57,8 +57,8 @@ namespace Dolores1810.EditorTools
                 { 541.75f, 0.8f, 2f }, { 578f, 2.3f, 6f }, { 641.75f, 0.8f, 2f }, { 702f, 2.3f, 5f } });
 
             // casas (más separadas) y decorado
-            BuildHouseRow(TownHouses, -4f, levelEnd - 4f, 0.7f, 0.8f, 1.8f, 5f, -40, -0.05f, Color.white, 0.75f, "Casa");
-            BuildHouseRow(TownHouses, -8f, levelEnd, 0.5f, 0.58f, 3f, 9f, -48, 0.4f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
+            BuildHouseRow(TownHouses, -4f, levelEnd - 4f, 0.7f, 0.8f, 1.8f, 5f, -40, -0.04f, Color.white, 0.75f, "Casa");
+            BuildHouseRow(TownHouses, -8f, levelEnd, 0.52f, 0.60f, 3f, 9f, -48, -0.02f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
             Prop("Props/quest_board.png", 9f, -20, false, 1f); Prop("Props/sign_2.png", 14f, -20, false, 1f);
             Prop("Props/target_1.png", 24f, -20, false, 1f); Prop("Props/target_2.png", 28f, -20, false, 1f);
             string[] bar = { "Props/barrier_1.png", "Props/barrier_2.png" };
@@ -80,17 +80,18 @@ namespace Dolores1810.EditorTools
             for (float x = 70f; x < 760f; x += 30f) BuildLamp(x, x > 520f);
             BuildBreakables(new float[] { 30f, 54f, 88f, 125f, 140f, 175f, 205f, 240f, 270f, 276f, 320f, 345f, 355f, 372f, 405f, 415f, 440f, 452f, 466f,
                 530f, 550f, 570f, 600f, 650f, 665f, 680f, 700f, 730f, 745f });
-            BuildSpikes(194f, 5f); BuildSpikes(575f, 6f); BuildSpikes(645f, 4f); BuildSpikes(752f, 4f);
+            BuildSpikes(194f, 5f); BuildSpikes(575f, 6f); BuildSpikes(645f, 4f);
 
-            // enemigos: débiles e intermedios
+            // enemigos: débiles e intermedios; comandante al final del Nivel 1
             float[,] en = {
                 { 0, 46, 3 }, { 0, 78, 3 }, { 0, 100, 4 },
                 { 0, 128, 3 }, { 0, 145, 2 }, { 0, 168, 3 }, { 0, 182, 2 }, { 1, 232, 3 }, { 0, 262, 3 }, { 0, 282, 3 },
                 { 0, 312, 3 }, { 1, 340, 4 }, { 0, 362, 3 }, { 1, 380, 4 }, { 0, 410, 3 },
                 { 0, 445, 2 }, { 1, 462, 3 }, { 0, 495, 3 }, { 0, 520, 3 }, { 1, 555, 3 }, { 0, 575, 3 }, { 0, 600, 3 }, { 1, 625, 3 },
-                { 0, 660, 3 }, { 1, 672, 3 }, { 0, 705, 3 }, { 1, 725, 3 }, { 0, 740, 3 }
+                { 0, 660, 3 }, { 1, 672, 3 }, { 0, 705, 3 }
             };
             for (int i = 0; i < en.GetLength(0); i++) BuildKnight(en[i, 0] < 0.5f ? "soldado" : "granadero", en[i, 1], en[i, 2]);
+            BuildBoss("oficial", "Comandante realista", 748f, 720f, 764f, false);
 
             // tesoros y coleccionables
             AutoCoins(14f, 780f, 24f, 34f, new float[] { 208f, 224f, 570f, 586f, 640f, 652f, 750f, 764f });
@@ -253,8 +254,8 @@ namespace Dolores1810.EditorTools
             for (int i = 0; i < TownHouses.Length; i++) town[i] = TownHouses[i];
             town[TownHouses.Length] = "Buildings/hacienda_00.png"; town[TownHouses.Length + 1] = "Buildings/hacienda_01.png";
             town[TownHouses.Length + 2] = "Buildings/hacienda_02.png"; town[TownHouses.Length + 3] = "Buildings/hacienda_03.png";
-            BuildHouseRow(town, -4f, levelEnd - 40f, 0.72f, 0.82f, 1.6f, 4.8f, -40, -0.05f, Color.white, 0.8f, "Casa");
-            BuildHouseRow(town, -8f, levelEnd - 30f, 0.5f, 0.58f, 3f, 8f, -48, 0.4f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
+            BuildHouseRow(town, -4f, levelEnd - 40f, 0.72f, 0.82f, 1.6f, 4.8f, -40, -0.04f, Color.white, 0.8f, "Casa");
+            BuildHouseRow(town, -8f, levelEnd - 30f, 0.52f, 0.60f, 3f, 8f, -48, -0.02f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
             // mercado y plaza
             for (float x = 30f; x < 520f; x += R(22f, 32f))
             {
@@ -312,12 +313,23 @@ namespace Dolores1810.EditorTools
                 { "870", "LA CAMPANA", "Es el momento", "Toca la campana de Dolores" } });
 
             var m = new LevelMeta();
-            m.title = "NIVEL 3: EL GRITO DE INDEPENDENCIA"; m.subtitle = "El día termina. La plaza de Dolores espera la campana.";
-            m.objective = "Cruza la plaza hacia la parroquia";
+            m.title = "NIVEL 3: LA PLAZA DE ARMAS"; m.subtitle = "La lucha llega al corazón de Dolores. Derrota al Coronel realista.";
+            m.objective = "Cruza la Plaza de Armas";
             m.missions = new Mission[] {
                 M("cajas", "Rompe 14 cajas o barriles", MissionKind.Break, 14, 80), M("soldados", "Derrota 22 soldados", MissionKind.Kills, 22, 100),
                 M("cofres", "Abre 3 cofres", MissionKind.Chests, 3, 100), M("pergaminos", "Encuentra 3 pergaminos históricos", MissionKind.Collect, 3, 100) };
-            m.todStart = 0f; m.todEnd = 1f; m.explore = A("music_festive.ogg"); m.isFinal = true;
+            m.todStart = 0f; m.todEnd = 1f; m.explore = A("music_festive.ogg"); m.isFinal = false;
+            return m;
+        }
+
+        // ================================================================== NIVEL 4: EL GRITO DE INDEPENDENCIA
+        static LevelMeta Level4()
+        {
+            var m = Level3();
+            m.title = "NIVEL 4: EL GRITO DE INDEPENDENCIA";
+            m.subtitle = "El asalto final hacia la Parroquia de Dolores. Derrota al General Realista.";
+            m.objective = "Avanza hacia la Parroquia de Dolores";
+            m.isFinal = true;
             return m;
         }
 

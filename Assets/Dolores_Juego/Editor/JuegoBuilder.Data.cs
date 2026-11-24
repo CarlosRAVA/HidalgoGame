@@ -64,6 +64,7 @@ namespace Dolores1810.EditorTools
             items.Add(MakeItem("mejora_res_rec", ShopKind.StaminaRecovery, "Recuperación de aliento", "Recuperas la resistencia 30% más rápido.", S("UI/icon_resistencia.png"), new int[] { 80, 150, 250 }, ""));
             items.Add(MakeItem("mejora_vel", ShopKind.Speed, "Botas veloces", "Caminas y corres 6% más rápido por nivel.", S("UI/icon_velocidad.png"), new int[] { 100, 200, 320 }, ""));
             items.Add(MakeItem("mejora_atq", ShopKind.Attack, "Fuerza de ataque", "Todas tus armas hacen 15% más de daño por nivel.", S("UI/icon_ataque.png"), new int[] { 120, 240, 400 }, ""));
+            items.Add(MakeItem("mejora_escudo", ShopKind.Shield, "Escudo insurgente", "Absorbe golpes enemigos antes de perder corazones (+1 carga de escudo por nivel, se regenera fuera de peligro).", S("Props/shield_2.png"), new int[] { 110, 220, 350 }, ""));
 
             // ---- enemigos (la resistencia fija golpes y daño: 2/1, 4/2, 6/3, 8/4)
             enemyAssets.Clear();
@@ -85,7 +86,8 @@ namespace Dolores1810.EditorTools
             var levels = new List<LevelInfo>();
             levels.Add(MakeLevel(1, "Nivel 1: El Pueblo de Dolores", "Septiembre de 1810. Cruza el pueblo de día y de noche, aprende a pelear y busca tesoros escondidos.", "Un pueblo tranquilo que pronto cambiará la historia."));
             levels.Add(MakeLevel(2, "Nivel 2: El Camino de la Insurgencia", "Un camino nocturno entre ríos, bosques y haciendas. Al amanecer te espera un capitán realista.", "La noche cubre el camino. Hay que seguir adelante."));
-            levels.Add(MakeLevel(3, "Nivel 3: El Grito de Independencia", "La gran plaza de Dolores. Derrota al coronel y toca la campana para dar el Grito.", "La plaza espera. Ha llegado el momento."));
+            levels.Add(MakeLevel(3, "Nivel 3: La Plaza de Armas", "Toma las calles iluminadas por faroles y derrota al Coronel realista para abrir paso hacia la Parroquia.", "La lucha llega al corazón de Dolores."));
+            levels.Add(MakeLevel(4, "Nivel 4: El Grito de Independencia", "El asalto final hacia la Parroquia de Dolores. Derrota al General Realista y haz sonar la campana.", "La Parroquia espera. Ha llegado el momento de la libertad."));
 
             database = Asset<GameDatabase>(Root + "/Resources/GameDatabase.asset");
             database.weapons = weapons.ToArray();
@@ -136,7 +138,8 @@ namespace Dolores1810.EditorTools
         {
             var l = new LevelInfo();
             l.index = index; l.sceneName = "Level" + index; l.title = title; l.description = desc; l.introLine = intro;
-            l.thumbnail = S("UI/level_" + index + ".png");
+            int thumbIdx = Mathf.Clamp(index, 1, 3);
+            l.thumbnail = S("UI/level_" + thumbIdx + ".png");
             return l;
         }
 

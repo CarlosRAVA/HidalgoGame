@@ -96,7 +96,7 @@ namespace Dolores1810
         float autosave;
         bool exiting;
 
-        public bool IsLastLevel { get { return levelIndex >= 3; } }
+        public bool IsLastLevel { get { return levelIndex >= 4; } }
 
         void Awake()
         {
@@ -105,6 +105,20 @@ namespace Dolores1810
             AudioListener.pause = false;
             State = GameState.Playing;
             CheckpointIndex = -1;
+            string activeScene = SceneManager.GetActiveScene().name;
+            if (activeScene == "Level4")
+            {
+                levelIndex = 4;
+                levelTitle = "NIVEL 4: EL GRITO DE INDEPENDENCIA";
+                levelSubtitle = "El asalto final hacia la Parroquia de Dolores. Derrota al General Realista.";
+                startObjective = "Avanza hacia la Parroquia de Dolores";
+            }
+            else if (activeScene == "Level3" && levelIndex == 3)
+            {
+                levelTitle = "NIVEL 3: LA PLAZA DE ARMAS";
+                levelSubtitle = "La lucha llega al corazón de Dolores. Derrota al Coronel realista.";
+                startObjective = "Cruza la Plaza de Armas";
+            }
             Fx.Spark = sparkSprite;
             Fx.Dust = dustSprite;
             Fx.Confetti = confettiSprite;
@@ -128,10 +142,15 @@ namespace Dolores1810
 
         void Start()
         {
-            Lives = startLives;
+            Lives = (PlayerProgress.Data.hasStarted && PlayerProgress.Data.savedLives > 0)
+                ? Mathf.Clamp(PlayerProgress.Data.savedLives, 1, GameRules.MaxLives)
+                : startLives;
+            PlayerProgress.SetSavedLives(Lives);
             if (startPoint != null) respawnPos = startPoint.position;
             else if (player != null) respawnPos = player.transform.position;
             PlayerProgress.MarkStarted(levelIndex);
+            PlayerProgress.SaveNow();
+            LevelObstaclesAndPuzzles.EnsureForLevel(this);
             var mm = MusicManager.Ensure();
             mm.SetSet(null, exploreClip, combatClip, bossClip, victoryClip, finalClip);
             mm.RegisterGameplay(true);
@@ -236,6 +255,8 @@ namespace Dolores1810
         public void AddLife()
         {
             Lives = Mathf.Min(GameRules.MaxLives, Lives + 1);
+            PlayerProgress.SetSavedLives(Lives);
+            PlayerProgress.SaveNow();
             RaiseStats();
         }
 
@@ -347,6 +368,9 @@ namespace Dolores1810
         {
             if (State == GameState.Victory || State == GameState.Cinematic && exiting) return;
             Lives--;
+            if (Lives > 0) PlayerProgress.SetSavedLives(Lives);
+            else PlayerProgress.SetSavedLives(startLives);
+            PlayerProgress.SaveNow();
             State = GameState.PlayerDead;
             RaiseStats();
             if (StateChanged != null) StateChanged();
@@ -391,6 +415,7 @@ namespace Dolores1810
             if (ExitShown != null) ExitShown(text);
             float t = 0f;
             while (t < 3.4f) { t += Time.unscaledDeltaTime; yield return null; }
+            PlayerProgress.SetSavedLives(Mathf.Max(1, Lives));
             PlayerProgress.CompleteLevel(levelIndex);
             LoadScene(nextScene);
         }

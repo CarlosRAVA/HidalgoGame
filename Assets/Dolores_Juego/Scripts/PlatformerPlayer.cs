@@ -51,6 +51,9 @@ namespace Dolores1810
         PState state = PState.Normal;
         int health;
         int maxHealth;
+        int shield;
+        int maxShield;
+        float shieldRegenTimer;
         float facing = 1f;
         float moveInput, vertInput;
         bool grounded, running, exhausted;
@@ -65,6 +68,8 @@ namespace Dolores1810
 
         public int Health { get { return health; } }
         public int MaxHealth { get { return maxHealth; } }
+        public int Shield { get { return shield; } }
+        public int MaxShield { get { return maxShield; } }
         public float Stamina { get { return stamina; } }
         public float StaminaMax { get { return PlayerStats.StaminaMax; } }
         public bool Exhausted { get { return exhausted; } }
@@ -93,6 +98,8 @@ namespace Dolores1810
             if (animator != null && animator.target == null) animator.target = visual;
             RefreshStats(false);
             health = maxHealth;
+            shield = maxShield;
+            shieldRegenTimer = 0f;
             stamina = StaminaMax;
         }
 
@@ -102,13 +109,17 @@ namespace Dolores1810
             if (animator != null) animator.Play(idle, true);
         }
 
-        /// <summary>Recalcula corazones y resistencia máximos con las mejoras compradas.</summary>
+        /// <summary>Recalcula corazones, escudo y resistencia máximos con las mejoras compradas.</summary>
         public void RefreshStats(bool healNewHeart)
         {
             int old = maxHealth;
+            int oldShield = maxShield;
             maxHealth = PlayerStats.MaxHearts;
+            maxShield = PlayerStats.MaxShield;
             if (healNewHeart && maxHealth > old && health > 0) health = Mathf.Min(maxHealth, health + (maxHealth - old));
+            if (healNewHeart && maxShield > oldShield && state != PState.Dead) shield = Mathf.Min(maxShield, shield + (maxShield - oldShield));
             health = Mathf.Min(health, maxHealth);
+            shield = Mathf.Min(shield, maxShield);
             stamina = Mathf.Min(stamina, StaminaMax);
             if (GameSession.I != null) GameSession.I.RaiseStats();
         }
@@ -227,6 +238,17 @@ namespace Dolores1810
                 if (hurtTimer <= 0f) state = PState.Normal;
             }
             if (invulnTimer > 0f) invulnTimer -= Time.deltaTime;
+            if (maxShield > 0 && shield < maxShield)
+            {
+                if (shieldRegenTimer <= 0f) shieldRegenTimer = PlayerStats.ShieldRegenSeconds;
+                shieldRegenTimer -= Time.deltaTime;
+                if (shieldRegenTimer <= 0f)
+                {
+                    shield = Mathf.Min(maxShield, shield + 1);
+                    shieldRegenTimer = shield < maxShield ? PlayerStats.ShieldRegenSeconds : 0f;
+                    if (gs != null) { gs.RaiseStats(); gs.ShowToast("¡Escudo regenerado!", 1.8f); }
+                }
+            }
 
             // --- interacción
             interactScan -= Time.deltaTime;
@@ -521,7 +543,31 @@ namespace Dolores1810
             if (gs != null && gs.State != GameState.Playing) return false;
 
             if (state == PState.Climbing) ExitClimb(Vector2.zero);
-            health = Mathf.Max(0, health - Mathf.Max(1, amount));
+            int dmg = Mathf.Max(1, amount);
+            if (shield > 0)
+            {
+                int absorbed = Mathf.Min(shield, dmg);
+                shield -= absorbed;
+                dmg -= absorbed;
+                shieldRegenTimer = PlayerStats.ShieldRegenSeconds;
+                if (dmg <= 0)
+                {
+                    invulnTimer = invulnTime;
+                    float blockDir = transform.position.x >= sourcePos.x ? 1f : -1f;
+                    if (rb == null) rb = GetComponent<Rigidbody2D>();
+                    if (rb != null) rb.SetVel(new Vector2(blockDir * 4.5f, 4.5f));
+                    AudioHub.Play(SfxId.HitEnemy, 0.04f);
+                    Fx.Hit(transform.position + Vector3.up * 0.9f);
+                    if (gs != null)
+                    {
+                        gs.RaiseStats();
+                        gs.ShowToast("¡Escudo bloqueó el golpe!", 1.6f);
+                        if (gs.cam != null) gs.cam.Shake(0.12f, 0.15f);
+                    }
+                    return true;
+                }
+            }
+            health = Mathf.Max(0, health - dmg);
             if (gs != null)
             {
                 gs.RaiseStats();
@@ -556,6 +602,8 @@ namespace Dolores1810
         {
             if (state == PState.Dead) return;
             health = maxHealth;
+            shield = maxShield;
+            shieldRegenTimer = 0f;
             stamina = StaminaMax;
             if (GameSession.I != null) GameSession.I.RaiseStats();
         }
@@ -599,6 +647,8 @@ namespace Dolores1810
             rb.SetVel(Vector2.zero);
             RefreshStats(false);
             health = maxHealth;
+            shield = maxShield;
+            shieldRegenTimer = 0f;
             stamina = StaminaMax;
             exhausted = false;
             state = PState.Normal;
