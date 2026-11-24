@@ -181,6 +181,11 @@ namespace Dolores1810
             startPos = transform.position;
             if (animator != null && idle != null) animator.Play(idle, true);
             SetFacing(-1);
+            if (GameSession.I != null)
+            {
+                GameSession.I.Respawned -= ResetFight;
+                GameSession.I.Respawned += ResetFight;
+            }
         }
 
         public void Relocate(Vector3 pos)
@@ -232,12 +237,11 @@ namespace Dolores1810
             EnsureOverheadBar();
         }
 
-        /// <summary>Si el jugador muere durante el combate, el jefe se reinicia y las rejas se abren para poder volver a entrar.</summary>
-        void ResetFight()
+        /// <summary>Si el jugador muere durante el combate, el jefe reinicia toda su vida y las rejas se abren para poder volver a entrar.</summary>
+        public void ResetFight()
         {
-            var gs = GameSession.I;
-            if (gs != null) gs.Respawned -= ResetFight;
             if (state == BState.Dead) return;
+            var gs = GameSession.I;
             bool wasActive = state != BState.Dormant;
             state = BState.Dormant;
             hp = maxHp;
@@ -253,18 +257,19 @@ namespace Dolores1810
             if (rb != null)
             {
                 rb.simulated = true;
+                rb.position = startPos;
                 rb.SetVel(Vector2.zero);
             }
             if (col != null) col.enabled = true;
             if (visual != null) visual.color = baseColor;
-            if (animator != null) animator.Play(idle, true);
+            if (animator != null && idle != null) animator.Play(idle, true);
             SetFacing(-1);
             if (arenaGates != null)
             {
                 foreach (var g in arenaGates) if (g != null) g.Open();
             }
-            if (gs != null) gs.BossEnded();
-            MusicManager.Ensure().SetMood(Mood.Explore);
+            if (wasActive && gs != null) gs.BossEnded();
+            if (wasActive) MusicManager.Ensure().SetMood(Mood.Explore);
             UpdateOverheadBar();
         }
 
@@ -275,6 +280,15 @@ namespace Dolores1810
             if (gs != null && (gs.State == GameState.Paused || gs.State == GameState.Shop)) return;
 
             PlatformerPlayer pl = gs != null ? gs.player : null;
+            bool playerDead = (pl != null && pl.IsDead) || (gs != null && (gs.State == GameState.PlayerDead || gs.State == GameState.GameOver));
+            if (playerDead)
+            {
+                if (state != BState.Dormant || hp < maxHp)
+                {
+                    ResetFight();
+                }
+                return;
+            }
             bool target = pl != null && !pl.IsDead && (gs == null || gs.State == GameState.Playing);
 
             if (state == BState.Dormant)

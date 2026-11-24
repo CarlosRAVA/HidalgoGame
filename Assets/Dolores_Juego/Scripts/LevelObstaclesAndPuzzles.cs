@@ -436,6 +436,7 @@ namespace Dolores1810
                 case 3: BuildLevel3(gs, a); break;
                 case 4: BuildLevel4(gs, a); break;
             }
+            AlignEnvironmentAndHouses(gs, a);
         }
 
         Assets GatherAssets(GameSession gs)
@@ -1018,6 +1019,512 @@ namespace Dolores1810
                     cps[i].transform.position = new Vector3(newX, newY, 0f);
                 }
             }
+        }
+
+        bool TrySampleSolidGroundTop(float x, int groundMask, out float topY)
+        {
+            topY = 0f;
+            RaycastHit2D[] hits = Physics2D.RaycastAll(new Vector2(x, 12f), Vector2.down, 18f, groundMask);
+            float bestY = -999f;
+            bool found = false;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                var col = hits[i].collider;
+                if (col == null || col.isTrigger) continue;
+                if (col.GetComponent<PlatformEffector2D>() != null) continue;
+                if (col.GetComponent<Gate>() != null) continue;
+                if (col.gameObject.name.Contains("Muro")) continue;
+                if (hits[i].point.y > bestY)
+                {
+                    bestY = hits[i].point.y;
+                    found = true;
+                }
+            }
+            if (found) topY = Mathf.Round(bestY * 20f) / 20f;
+            return found;
+        }
+
+        /// <summary>
+        /// Corrige cualquier desfase visual en las casitas, haciendas, luces de ventana y capas de fondo parallax:
+        /// asienta todas las casas de primer y segundo plano sobre el suelo firme, oculta o reubica las que
+        /// sobresalgan en escalones/ríos y sincroniza las capas del horizonte.
+        /// </summary>
+        void AlignEnvironmentAndHouses(GameSession gs, Assets a)
+        {
+            int groundMask = 1 << a.groundLayer;
+
+            // 1. Ajustar altura base de las capas de fondo (Fondo) para que el pueblo y bosque no queden enterrados
+            var bgRoot = GameObject.Find("Fondo");
+            if (bgRoot != null)
+            {
+                var layers = bgRoot.GetComponentsInChildren<ParallaxLayer>(true);
+                for (int i = 0; i < layers.Length; i++)
+                {
+                    var pl = layers[i];
+                    if (pl == null) continue;
+                    string ln = pl.gameObject.name;
+                    Vector3 lp = pl.transform.position;
+                    if (ln.Contains("PuebloLejano") || ln.Contains("PuebloLuces"))
+                    {
+                        lp.y = -0.65f;
+                        pl.speedX = 0.50f;
+                        pl.speedY = 0.78f;
+                        pl.tileWidth = 20.48f;
+                    }
+                    else if (ln.Contains("BosqueCercano"))
+                    {
+                        lp.y = -0.55f;
+                        pl.speedY = 0.78f;
+                    }
+                    else if (ln.Contains("BosqueLejano"))
+                    {
+                        lp.y = -0.65f;
+                        pl.speedY = 0.76f;
+                    }
+                    else if (ln.Contains("Lomas"))
+                    {
+                        lp.y = -0.80f;
+                        pl.speedY = 0.74f;
+                    }
+                    else if (ln.Contains("MontanasCercanas"))
+                    {
+                        lp.y = -0.85f;
+                        pl.speedY = 0.72f;
+                    }
+                    else if (ln.Contains("MontanasLejanas"))
+                    {
+                        lp.y = -0.90f;
+                        pl.speedY = 0.70f;
+                    }
+                    pl.transform.position = lp;
+                }
+            }
+
+            // 2. Alinear todas las casitas y haciendas al nivel exacto del suelo y evitar que floten en escalones o fosas
+            var casasRoot = GameObject.Find("Casas");
+            if (casasRoot == null) return;
+
+            var activeHouses = new System.Collections.Generic.List<SpriteRenderer>();
+            var windowLights = new System.Collections.Generic.List<Transform>();
+
+            for (int i = 0; i < casasRoot.transform.childCount; i++)
+            {
+                Transform ch = casasRoot.transform.GetChild(i);
+                if (ch == null || !ch.gameObject.activeSelf) continue;
+                string cn = ch.gameObject.name;
+                if (cn.Contains("LuzVentana") || cn.Contains("LuzParroquia"))
+                {
+                    windowLights.Add(ch);
+                    continue;
+                }
+
+                var sr = ch.GetComponent<SpriteRenderer>();
+                if (sr == null || sr.sprite == null) continue;
+
+                float scX = Mathf.Abs(ch.localScale.x);
+                float halfW = sr.sprite.bounds.size.x * scX * 0.44f;
+                float cx = ch.position.x;
+
+                if (cn == "CasaDestacada" || cn == "Parroquia")
+                {
+                    float gy;
+                    if (TrySampleSolidGroundTop(cx, groundMask, out gy))
+                    {
+                        ch.position = new Vector3(cx, gy - 0.04f, ch.position.z);
+                    }
+                    activeHouses.Add(sr);
+                    continue;
+                }
+
+                float topC, topL, topR;
+                bool okC = TrySampleSolidGroundTop(cx, groundMask, out topC);
+                bool okL = TrySampleSolidGroundTop(cx - halfW, groundMask, out topL);
+                bool okR = TrySampleSolidGroundTop(cx + halfW, groundMask, out topR);
+
+                bool flat = okC && okL && okR && Mathf.Abs(topC - topL) < 0.12f && Mathf.Abs(topC - topR) < 0.12f;
+                if (!flat)
+                {
+                    // Intentar desplazar ligeramente la casa hacia el lado plano para que no quede colgando en un escalón o puente
+                    float[] shifts = { -1.8f, 1.8f, -3.2f, 3.2f };
+                    for (int s = 0; s < shifts.Length; s++)
+                    {
+                        float testX = cx + shifts[s];
+                        bool sC = TrySampleSolidGroundTop(testX, groundMask, out topC);
+                        bool sL = TrySampleSolidGroundTop(testX - halfW, groundMask, out topL);
+                        bool sR = TrySampleSolidGroundTop(testX + halfW, groundMask, out topR);
+                        if (sC && sL && sR && Mathf.Abs(topC - topL) < 0.12f && Mathf.Abs(topC - topR) < 0.12f)
+                        {
+                            cx = testX;
+                            flat = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!flat)
+                {
+                    ch.gameObject.SetActive(false);
+                    continue;
+                }
+
+                // Asentar firmemente la casa sobre el suelo (incluyendo CasaFondo que antes flotaba a +0.4m)
+                float yOffset = cn == "CasaFondo" ? -0.02f : -0.04f;
+                ch.position = new Vector3(cx, topC + yOffset, ch.position.z);
+                activeHouses.Add(sr);
+            }
+
+            // 3. Alinear los brillos de ventana (LuzVentana) con su casa correspondiente
+            for (int i = 0; i < windowLights.Count; i++)
+            {
+                Transform wl = windowLights[i];
+                if (wl == null || wl.gameObject.name.Contains("LuzParroquia")) continue;
+                SpriteRenderer bestHouse = null;
+                float bestDist = 3.6f;
+                for (int h = 0; h < activeHouses.Count; h++)
+                {
+                    var hs = activeHouses[h];
+                    if (hs == null || !hs.gameObject.activeSelf) continue;
+                    float d = Mathf.Abs(wl.position.x - hs.transform.position.x);
+                    if (d < bestDist)
+                    {
+                        bestDist = d;
+                        bestHouse = hs;
+                    }
+                }
+                if (bestHouse == null)
+                {
+                    wl.gameObject.SetActive(false);
+                }
+                else
+                {
+                    float hScale = Mathf.Abs(bestHouse.transform.localScale.y);
+                    float winX = bestHouse.transform.position.x;
+                    float winY = bestHouse.transform.position.y + 1.15f * hScale;
+                    wl.position = new Vector3(winX, winY, wl.position.z);
+                }
+            }
+
+            // 4. Poblar el escenario con composiciones creativas usando los assets de Craftpix y Dolores_Juego
+            DecorateCreativeScenery(gs, a, groundMask, activeHouses);
+        }
+
+        static readonly System.Collections.Generic.Dictionary<string, Sprite> s_externalSprites =
+            new System.Collections.Generic.Dictionary<string, Sprite>();
+
+        static Sprite LoadAssetSprite(string relPath, float ppu = 128f, float bottomSkipRatio = 0f)
+        {
+            string key = relPath + "|" + ppu.ToString("F0") + "|" + bottomSkipRatio.ToString("F2");
+            Sprite cached;
+            if (s_externalSprites.TryGetValue(key, out cached) && cached != null)
+                return cached;
+
+            string fullPath = System.IO.Path.Combine(Application.dataPath, relPath);
+            if (!System.IO.File.Exists(fullPath)) return null;
+
+            byte[] bytes = System.IO.File.ReadAllBytes(fullPath);
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            if (!ImageConversion.LoadImage(tex, bytes)) return null;
+
+            tex.filterMode = FilterMode.Bilinear;
+            tex.wrapMode = TextureWrapMode.Clamp;
+
+            int y0 = Mathf.Clamp(Mathf.RoundToInt(tex.height * bottomSkipRatio), 0, tex.height - 4);
+            int h = tex.height - y0;
+            var sp = Sprite.Create(tex, new Rect(0, y0, tex.width, h), new Vector2(0.5f, 0f), ppu);
+            s_externalSprites[key] = sp;
+            return sp;
+        }
+
+        SpriteRenderer SpawnSceneryProp(Assets a, Transform parent, string name, Sprite sp, Vector3 pos, int sortingOrder, float scale, Color tint, bool flipX = false, bool unlit = false)
+        {
+            if (sp == null) return null;
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.position = pos;
+            go.transform.localScale = new Vector3(flipX ? -scale : scale, scale, 1f);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = sp;
+            sr.color = tint;
+            sr.sortingOrder = sortingOrder;
+            var mat = unlit ? a.unlitMat : a.litMat;
+            if (mat != null) sr.sharedMaterial = mat;
+            return sr;
+        }
+
+        void SpawnBrazierWithGlow(Assets a, Transform parent, Sprite brazierSp, float x, float y, int sortingOrder, float scale = 0.85f)
+        {
+            if (brazierSp == null) return;
+            var sr = SpawnSceneryProp(a, parent, "BraseroColonial", brazierSp, new Vector3(x, y - 0.03f, 0f), sortingOrder, scale, Color.white);
+            if (sr != null && a.glow != null)
+            {
+                float topY = sr.bounds.max.y - 0.12f;
+                SpawnSceneryProp(a, sr.transform, "LuzBrasero", a.glow, new Vector3(x, topY, 0f), sortingOrder + 1, 1.85f, new Color(1f, 0.78f, 0.32f, 0.62f), false, true);
+            }
+        }
+
+        void SpawnStatueWithLanternGlow(Assets a, Transform parent, Sprite statueSp, float x, float y, int sortingOrder, float scale = 0.92f, bool flipX = false)
+        {
+            if (statueSp == null) return;
+            var sr = SpawnSceneryProp(a, parent, "EstatuaFarol", statueSp, new Vector3(x, y - 0.03f, 0f), sortingOrder, scale, Color.white, flipX);
+            if (sr != null && a.glow != null)
+            {
+                float dir = flipX ? 0.22f : -0.22f;
+                SpawnSceneryProp(a, sr.transform, "LuzFarolEstatua", a.glow, new Vector3(x + dir * scale, y + 0.72f * scale, 0f), sortingOrder + 1, 1.65f, new Color(1f, 0.84f, 0.36f, 0.58f), false, true);
+            }
+        }
+
+        /// <summary>
+        /// Enriquece creativamente el escenario de los niveles 1 a 4 utilizando los assets de Craftpix y Dolores_Juego:
+        /// variedad arquitectónica en edificios, guirnaldas festivas de papel picado, faroles con halo cálido,
+        /// estatuas con farol, ruinas coloniales, arcos de piedra con campana, puestos de mercado y torres vigía.
+        /// </summary>
+        void DecorateCreativeScenery(GameSession gs, Assets a, int groundMask, System.Collections.Generic.List<SpriteRenderer> activeHouses)
+        {
+            var root = new GameObject("EscenarioCreativo");
+            root.transform.SetParent(transform, false);
+
+            // Cargar edificios adicionales de Craftpix Tropical Medieval City (recortando la sombra ovalada inferior)
+            Sprite bldStorehouse = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_4/building_1.png", 122f, 0.06f);
+            Sprite bldPorchHouse = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_5/building_1.png", 122f, 0.08f);
+            Sprite bldWorkshop   = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_10/building_1.png", 122f, 0.06f);
+            Sprite bldGreenShop  = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_11/building_1.png", 122f, 0.06f);
+            Sprite bldWatchtower = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_12/building_1.png", 124f, 0.06f);
+            Sprite bldTavern     = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_14/building_1.png", 122f, 0.06f);
+            Sprite bldInn        = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/buildings/building_16/building_1.png", 122f, 0.06f);
+
+            // Cargar props ambientales de Craftpix Medieval Arena, Medieval Ruins, Tropical City y Dolores_Juego
+            Sprite spArchBell    = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Arch.png", 100f, 0f);
+            Sprite spBanner1     = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Banner 01.png", 110f, 0f);
+            Sprite spBanner2     = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Banner 02.png", 110f, 0f);
+            Sprite spBanner3     = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Banner 03.png", 110f, 0f);
+            Sprite spFlag        = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Flag.png", 110f, 0f);
+            Sprite spTable1      = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Table 01.png", 120f, 0f);
+            Sprite spDeadTree1   = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Tree 01.png", 115f, 0f);
+            Sprite spDeadTree2   = LoadAssetSprite("craftpix-net-916026-free-medieval-training-arena-2d-tileset/PNG/Environment/Cartoon_Medieval_Training Arena_Level_Set_Environment - Tree 02.png", 115f, 0f);
+
+            Sprite spStatue      = LoadAssetSprite("craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Statue.png", 115f, 0f);
+            Sprite spRuin1       = LoadAssetSprite("craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Ruins_01.png", 115f, 0f);
+            Sprite spRuin2       = LoadAssetSprite("craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Ruins_02.png", 115f, 0f);
+            Sprite spPlant       = LoadAssetSprite("craftpix-net-370528-free-medieval-ruins-cartoon-2d-tileset/PNG/Environment/Decor_Plant.png", 128f, 0f);
+
+            Sprite spBrazier     = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/decor/decor_1.png", 115f, 0.10f);
+            Sprite spBowl        = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/decor/decor_5.png", 140f, 0.14f);
+            Sprite spCart        = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/decor/decor_14.png", 125f, 0.12f);
+            Sprite spGreenery3   = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/decor/greenery_3.png", 128f, 0.16f);
+            Sprite spPalm1       = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/decor/tree_1.png", 115f, 0.12f);
+            Sprite spPalm2       = LoadAssetSprite("craftpix-988114-free-tropical-medieval-city-2d-tileset/PNG/decor/tree_2.png", 115f, 0.12f);
+
+            Sprite spPapelPicado = LoadAssetSprite("Dolores_Juego/Art/Props/papel_picado.png", 100f, 0f);
+            Sprite spLamp        = LoadAssetSprite("Dolores_Juego/Art/Props/lamp.png", 120f, 0f);
+
+            int lvl = gs != null ? gs.levelIndex : 1;
+            float maxX = (lvl == 1) ? 276f : ((lvl == 2) ? 336f : ((lvl == 3) ? 304f : 310f));
+            bool isTown = (lvl != 2);
+
+            // 1. Variedad arquitectónica: intercalar edificios pintados de Craftpix en la fila de casas y fondo
+            Sprite[] townVariety = { bldWorkshop, bldGreenShop, bldInn, bldTavern, bldWatchtower, bldStorehouse };
+            Sprite[] ruralVariety = { bldPorchHouse, bldStorehouse, bldTavern, bldWorkshop, bldInn };
+            Sprite[] palette = isTown ? townVariety : ruralVariety;
+
+            int bgCount = 0;
+            int fgCount = 0;
+            for (int i = 0; i < activeHouses.Count; i++)
+            {
+                var hs = activeHouses[i];
+                if (hs == null || !hs.gameObject.activeSelf) continue;
+                float hx = hs.transform.position.x;
+                if (hx > maxX + 18f) continue;
+
+                string hn = hs.gameObject.name;
+                if (hn == "CasaDestacada" || hn == "Parroquia") continue;
+
+                if (hn == "CasaFondo")
+                {
+                    bgCount++;
+                    if (bgCount % 2 == 0 && palette.Length > 0)
+                    {
+                        Sprite rep = palette[(bgCount / 2) % palette.Length];
+                        if (rep != null) hs.sprite = rep;
+                    }
+                }
+                else if (hn == "Casa" || hn == "Hacienda")
+                {
+                    fgCount++;
+                    if (fgCount % 3 == 2 && palette.Length > 0)
+                    {
+                        Sprite rep = palette[(fgCount / 3) % palette.Length];
+                        if (rep != null && rep != bldWatchtower) hs.sprite = rep;
+                    }
+                }
+            }
+
+            // 2. Guirnaldas festivas de Papel Picado y Faroles Coloniales con halo cálido en las calles del pueblo (Niveles 1, 3 y 4)
+            if (isTown && spPapelPicado != null)
+            {
+                int garlandIdx = 0;
+                for (float gx = 10f; gx < maxX - 12f; gx += 15.5f)
+                {
+                    float gy;
+                    if (!TrySampleSolidGroundTop(gx, groundMask, out gy)) gy = 0f;
+                    float hOffset = 5.15f + (garlandIdx % 2) * 0.35f;
+                    SpawnSceneryProp(a, root.transform, "GuirnaldaPapelPicado", spPapelPicado,
+                        new Vector3(gx, gy + hOffset, 0f), 24, 1.32f, Color.white, garlandIdx % 2 == 1);
+
+                    // Segundo cordón en segundo plano para dar profundidad festiva a la calle
+                    if (garlandIdx % 2 == 0)
+                    {
+                        SpawnSceneryProp(a, root.transform, "GuirnaldaFondo", spPapelPicado,
+                            new Vector3(gx + 7.5f, gy + 4.45f, 0f), -28, 1.08f, new Color(0.88f, 0.86f, 0.96f, 0.88f));
+                    }
+                    garlandIdx++;
+                }
+            }
+
+            // Añadir halos cálidos a los Faroles existentes y colocar faroles adicionales en zonas oscuras
+            if (spLamp != null && isTown)
+            {
+                for (float lx = 22f; lx < maxX - 18f; lx += 26f)
+                {
+                    float ly;
+                    if (!TrySampleSolidGroundTop(lx, groundMask, out ly)) continue;
+                    var lampSr = SpawnSceneryProp(a, root.transform, "FarolColonialExtra", spLamp, new Vector3(lx, ly - 0.03f, 0f), -19, 1.0f, Color.white);
+                    if (lampSr != null && a.glow != null)
+                    {
+                        SpawnSceneryProp(a, lampSr.transform, "HaloFarol", a.glow, new Vector3(lx, ly + 2.45f, 0f), -18, 2.2f, new Color(1f, 0.85f, 0.42f, 0.52f), false, true);
+                    }
+                }
+            }
+
+            // 3. Plaza de Inicio (x = 4..20): Arco de campana colonial, estatua guardián con farol, estandartes y braseros
+            {
+                float startY;
+                if (!TrySampleSolidGroundTop(6.5f, groundMask, out startY)) startY = 0f;
+                SpawnSceneryProp(a, root.transform, "ArcoInicioNivel", spArchBell, new Vector3(6.5f, startY - 0.04f, 0f), -26, 1.18f, Color.white);
+                SpawnStatueWithLanternGlow(a, root.transform, spStatue, 3.6f, startY, -24, 0.95f, false);
+                SpawnBrazierWithGlow(a, root.transform, spBrazier, 9.4f, startY, -22, 0.82f);
+                SpawnSceneryProp(a, root.transform, "EstandarteInicio", spFlag, new Vector3(11.2f, startY - 0.03f, 0f), -25, 0.95f, Color.white);
+                SpawnSceneryProp(a, root.transform, "ArbustoInicio", spGreenery3, new Vector3(4.8f, startY - 0.04f, 0f), -21, 0.9f, Color.white);
+            }
+
+            // 4. Plazas de Mercader (alrededor de cada tienda activa): carreta, mesas, vasijas, estandartes y vegetación
+            var shops = FindObjectsByType<ShopPoint>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < shops.Length; i++)
+            {
+                if (shops[i] == null) continue;
+                float sx = shops[i].transform.position.x;
+                if (sx > maxX) continue;
+                float sy;
+                if (!TrySampleSolidGroundTop(sx, groundMask, out sy)) sy = shops[i].transform.position.y;
+
+                SpawnSceneryProp(a, root.transform, "CarretaMercado", spCart, new Vector3(sx - 3.6f, sy - 0.03f, 0f), -23, 0.88f, Color.white);
+                SpawnSceneryProp(a, root.transform, "MesaMercado", spTable1, new Vector3(sx + 3.4f, sy - 0.03f, 0f), -23, 0.92f, Color.white);
+                SpawnSceneryProp(a, root.transform, "VasijaMercado", spBowl, new Vector3(sx + 3.4f, sy + 0.72f, 0f), -22, 0.75f, Color.white);
+                SpawnBrazierWithGlow(a, root.transform, spBrazier, sx - 2.1f, sy, -21, 0.80f);
+                SpawnBrazierWithGlow(a, root.transform, spBrazier, sx + 2.1f, sy, -21, 0.80f);
+                if (spPapelPicado != null)
+                {
+                    SpawnSceneryProp(a, root.transform, "DoselMercado", spPapelPicado, new Vector3(sx, sy + 4.2f, 0f), 22, 1.25f, Color.white);
+                }
+            }
+
+            // 5. Monumentos y Ruinas en cada Acertijo (Bandera y Antorchas) y Mini-Jefes
+            var hintSigns = FindObjectsByType<PuzzleHintSign>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < hintSigns.Length; i++)
+            {
+                if (hintSigns[i] == null) continue;
+                float px = hintSigns[i].transform.position.x;
+                float py = hintSigns[i].transform.position.y;
+                if (px > maxX + 5f) continue;
+
+                // En los letreros de pista al inicio de cada puzzle, colocar estatua guardián con farol y ruina colonial
+                if (hintSigns[i].gameObject.name.Contains("CartelPista"))
+                {
+                    SpawnStatueWithLanternGlow(a, root.transform, spStatue, px - 1.4f, py, -22, 0.88f, false);
+                    SpawnSceneryProp(a, root.transform, "RuinaPuzzle", (i % 2 == 0) ? spRuin1 : spRuin2, new Vector3(px + 4.5f, py - 0.04f, 0f), -27, 0.95f, new Color(0.92f, 0.90f, 0.96f, 1f));
+                    SpawnBrazierWithGlow(a, root.transform, spBrazier, px + 0.9f, py, -21, 0.78f);
+                }
+            }
+
+            var miniBosses = FindObjectsByType<MiniBossGuard>(FindObjectsInactive.Exclude);
+            for (int i = 0; i < miniBosses.Length; i++)
+            {
+                var mb = miniBosses[i];
+                if (mb == null || mb.blockingGate == null) continue;
+                float gx = mb.blockingGate.transform.position.x;
+                float gy = mb.blockingGate.transform.position.y;
+
+                // Enmarcar la puerta del Mini-Jefe con un arco de piedra al fondo, estandartes y braseros
+                SpawnSceneryProp(a, root.transform, "ArcoMiniJefe", spArchBell, new Vector3(gx, gy - 0.04f, 0f), -25, 1.15f, new Color(0.92f, 0.88f, 0.86f, 1f));
+                SpawnSceneryProp(a, root.transform, "PendonMiniJefeIzq", spBanner1, new Vector3(gx - 1.55f, gy + 2.35f, 0f), -24, 0.92f, Color.white);
+                SpawnSceneryProp(a, root.transform, "PendonMiniJefeDer", spBanner2, new Vector3(gx + 1.55f, gy + 2.35f, 0f), -24, 0.92f, Color.white);
+                SpawnBrazierWithGlow(a, root.transform, spBrazier, gx - 1.8f, gy, -20, 0.85f);
+            }
+
+            // 6. Paisaje creativo a lo largo del recorrido (palmeras, árboles antiguos, ruinas y estatuas en Nivel 2; jardines coloniales en Niveles 1, 3 y 4)
+            Sprite[] banners = { spBanner1, spBanner2, spBanner3 };
+            for (float wx = 26f; wx < maxX - 35f; wx += 22f)
+            {
+                float wy;
+                if (!TrySampleSolidGroundTop(wx, groundMask, out wy)) continue;
+                int stepIdx = Mathf.RoundToInt(wx / 22f);
+
+                if (!isTown)
+                {
+                    // Nivel 2: Ruta nocturna insurgente con palmeras, árboles secos, ruinas musgosas y estatuas con farol guiando el camino
+                    Sprite treeSp = (stepIdx % 3 == 0) ? spPalm1 : ((stepIdx % 3 == 1) ? spPalm2 : ((stepIdx % 2 == 0) ? spDeadTree1 : spDeadTree2));
+                    SpawnSceneryProp(a, root.transform, "ArbolCaminoCreativo", treeSp, new Vector3(wx, wy - 0.05f, 0f), -34, 0.92f, new Color(0.84f, 0.88f, 0.94f, 1f), stepIdx % 2 == 1);
+
+                    if (stepIdx % 2 == 0)
+                    {
+                        SpawnSceneryProp(a, root.transform, "RuinaCamino", (stepIdx % 4 == 0) ? spRuin1 : spRuin2, new Vector3(wx + 6.5f, wy - 0.04f, 0f), -28, 0.95f, Color.white);
+                    }
+                    else
+                    {
+                        SpawnStatueWithLanternGlow(a, root.transform, spStatue, wx + 5.5f, wy, -24, 0.88f, stepIdx % 3 == 0);
+                    }
+                    SpawnSceneryProp(a, root.transform, "PlantaCamino", (stepIdx % 2 == 0) ? spPlant : spGreenery3, new Vector3(wx - 3.2f, wy - 0.03f, 0f), -19, 0.88f, Color.white);
+                }
+                else
+                {
+                    // Niveles 1, 3 y 4: Palmeras de plaza colonial, jardines con plantas, estandartes en fachadas y braseros
+                    if (stepIdx % 2 == 0)
+                    {
+                        SpawnSceneryProp(a, root.transform, "PalmeraPlaza", (stepIdx % 4 == 0) ? spPalm1 : spPalm2,
+                            new Vector3(wx, wy - 0.05f, 0f), -42, 0.78f, new Color(0.90f, 0.92f, 0.98f, 1f), stepIdx % 3 == 0);
+                    }
+                    Sprite bSp = banners[stepIdx % banners.Length];
+                    SpawnSceneryProp(a, root.transform, "PendonColonial", bSp, new Vector3(wx + 4.2f, wy + 2.4f, 0f), -35, 0.88f, Color.white);
+                    SpawnSceneryProp(a, root.transform, "JardineraColonial", (stepIdx % 2 == 0) ? spPlant : spGreenery3,
+                        new Vector3(wx + 2.4f, wy - 0.03f, 0f), -19, 0.88f, Color.white);
+                }
+            }
+
+            // 7. Gran Plaza de la Arena del Jefe y Monumento Final
+            var boss = FindAnyObjectByType<BossKnight>();
+            if (boss != null)
+            {
+                float bx = boss.transform.position.x;
+                float by;
+                if (!TrySampleSolidGroundTop(bx, groundMask, out by)) by = 0f;
+
+                // Torres vigía gemelas y arcos de piedra flanqueando la arena del jefe final
+                SpawnSceneryProp(a, root.transform, "TorreVigiaArenaIzq", bldWatchtower, new Vector3(bx - 16f, by - 0.05f, 0f), -37, 0.74f, new Color(0.90f, 0.88f, 0.95f, 1f));
+                SpawnSceneryProp(a, root.transform, "TorreVigiaArenaDer", bldWatchtower, new Vector3(bx + 15f, by - 0.05f, 0f), -37, 0.74f, new Color(0.90f, 0.88f, 0.95f, 1f), true);
+                SpawnSceneryProp(a, root.transform, "ArcoCentroArena", spArchBell, new Vector3(bx, by - 0.04f, 0f), -29, 1.35f, new Color(0.88f, 0.84f, 0.84f, 1f));
+                SpawnStatueWithLanternGlow(a, root.transform, spStatue, bx - 9.5f, by, -25, 1.0f, false);
+                SpawnStatueWithLanternGlow(a, root.transform, spStatue, bx + 9.5f, by, -25, 1.0f, true);
+                SpawnBrazierWithGlow(a, root.transform, spBrazier, bx - 5.5f, by, -22, 0.90f);
+                SpawnBrazierWithGlow(a, root.transform, spBrazier, bx + 5.5f, by, -22, 0.90f);
+            }
+
+            // Flanquear el Arco Final / Campana de Dolores con arco de piedra, estatuas y braseros
+            float endY;
+            if (!TrySampleSolidGroundTop(maxX, groundMask, out endY)) endY = 0f;
+            SpawnSceneryProp(a, root.transform, "ArcoPiedraMeta", spArchBell, new Vector3(maxX, endY - 0.04f, 0f), -26, 1.30f, Color.white);
+            SpawnStatueWithLanternGlow(a, root.transform, spStatue, maxX - 3.6f, endY, -23, 0.96f, false);
+            SpawnStatueWithLanternGlow(a, root.transform, spStatue, maxX + 3.6f, endY, -23, 0.96f, true);
+            SpawnBrazierWithGlow(a, root.transform, spBrazier, maxX - 2.6f, endY, -21, 0.88f);
+            SpawnBrazierWithGlow(a, root.transform, spBrazier, maxX + 2.6f, endY, -21, 0.88f);
         }
 
         void ClearZoneRange(float xMin, float xMax)

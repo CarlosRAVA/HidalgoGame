@@ -57,8 +57,8 @@ namespace Dolores1810.EditorTools
                 { 541.75f, 0.8f, 2f }, { 578f, 2.3f, 6f }, { 641.75f, 0.8f, 2f }, { 702f, 2.3f, 5f } });
 
             // casas (más separadas) y decorado
-            BuildHouseRow(TownHouses, -4f, levelEnd - 4f, 0.7f, 0.8f, 1.8f, 5f, -40, -0.05f, Color.white, 0.75f, "Casa");
-            BuildHouseRow(TownHouses, -8f, levelEnd, 0.5f, 0.58f, 3f, 9f, -48, 0.4f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
+            BuildHouseRow(TownHouses, -4f, levelEnd - 4f, 0.7f, 0.8f, 1.8f, 5f, -40, -0.04f, Color.white, 0.75f, "Casa");
+            BuildHouseRow(TownHouses, -8f, levelEnd, 0.52f, 0.60f, 3f, 9f, -48, -0.02f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
             Prop("Props/quest_board.png", 9f, -20, false, 1f); Prop("Props/sign_2.png", 14f, -20, false, 1f);
             Prop("Props/target_1.png", 24f, -20, false, 1f); Prop("Props/target_2.png", 28f, -20, false, 1f);
             string[] bar = { "Props/barrier_1.png", "Props/barrier_2.png" };
@@ -254,8 +254,8 @@ namespace Dolores1810.EditorTools
             for (int i = 0; i < TownHouses.Length; i++) town[i] = TownHouses[i];
             town[TownHouses.Length] = "Buildings/hacienda_00.png"; town[TownHouses.Length + 1] = "Buildings/hacienda_01.png";
             town[TownHouses.Length + 2] = "Buildings/hacienda_02.png"; town[TownHouses.Length + 3] = "Buildings/hacienda_03.png";
-            BuildHouseRow(town, -4f, levelEnd - 40f, 0.72f, 0.82f, 1.6f, 4.8f, -40, -0.05f, Color.white, 0.8f, "Casa");
-            BuildHouseRow(town, -8f, levelEnd - 30f, 0.5f, 0.58f, 3f, 8f, -48, 0.4f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
+            BuildHouseRow(town, -4f, levelEnd - 40f, 0.72f, 0.82f, 1.6f, 4.8f, -40, -0.04f, Color.white, 0.8f, "Casa");
+            BuildHouseRow(town, -8f, levelEnd - 30f, 0.52f, 0.60f, 3f, 8f, -48, -0.02f, new Color(0.78f, 0.8f, 0.95f, 1f), 0.3f, "CasaFondo");
             // mercado y plaza
             for (float x = 30f; x < 520f; x += R(22f, 32f))
             {

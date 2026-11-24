@@ -40,6 +40,7 @@ namespace Dolores1810
         bool didHit, alerted, counted;
         Transform camT;
         Color baseColor = Color.white;
+        Vector3 startPos;
 
         public bool IsDead { get { return state == EState.Dead; } }
 
@@ -86,16 +87,55 @@ namespace Dolores1810
         void Start()
         {
             InitConfig();
+            startPos = transform.position;
+            homeX = startPos.x;
             patrolTimer = Random.Range(1f, 3f);
             cooldown = Random.Range(0.3f, 1f);
             SetFacing(-1);
             animator.Play(idle, true);
-            if (GameSession.I != null && GameSession.I.cam != null) camT = GameSession.I.cam.transform;
+            if (GameSession.I != null)
+            {
+                if (GameSession.I.cam != null) camT = GameSession.I.cam.transform;
+                GameSession.I.Respawned -= ResetFullHealth;
+                GameSession.I.Respawned += ResetFullHealth;
+            }
         }
 
         void OnDestroy()
         {
+            if (GameSession.I != null) GameSession.I.Respawned -= ResetFullHealth;
             if (counted) { counted = false; CombatTracker.Remove(); }
+        }
+
+        public void ResetFullHealth()
+        {
+            if (state == EState.Dead) return;
+            hp = maxHp;
+            state = EState.Patrol;
+            desiredVelX = 0f;
+            hurtTimer = 0f;
+            flashTimer = 0f;
+            didHit = false;
+            alerted = false;
+            waiting = true;
+            patrolTimer = 1.0f;
+            LeaveCombat();
+            if (startPos.sqrMagnitude > 0.0001f)
+            {
+                transform.position = startPos;
+                homeX = startPos.x;
+                if (rb != null)
+                {
+                    rb.position = startPos;
+                    rb.SetVel(Vector2.zero);
+                }
+            }
+            if (visual != null) visual.color = baseColor;
+            if (animator != null && idle != null) animator.Play(idle, true);
+            if (hpFill != null)
+            {
+                hpFill.transform.localScale = new Vector3(hpBarWidth, hpFill.transform.localScale.y, 1f);
+            }
         }
 
         void SetFacing(int dir)
@@ -146,6 +186,15 @@ namespace Dolores1810
             }
 
             PlatformerPlayer pl = gs != null ? gs.player : null;
+            bool playerDead = (pl != null && pl.IsDead) || (gs != null && (gs.State == GameState.PlayerDead || gs.State == GameState.GameOver));
+            if (playerDead)
+            {
+                if (hp < maxHp || state != EState.Patrol)
+                {
+                    ResetFullHealth();
+                }
+                return;
+            }
             bool hasTarget = pl != null && !pl.IsDead && gs.State == GameState.Playing;
             float dx = 0f, dy = 0f;
             if (pl != null)
@@ -356,6 +405,7 @@ namespace Dolores1810
         void Die()
         {
             state = EState.Dead;
+            if (GameSession.I != null) GameSession.I.Respawned -= ResetFullHealth;
             LeaveCombat();
             desiredVelX = 0f;
             animator.Play(die, true);

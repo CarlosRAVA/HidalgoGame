@@ -17,33 +17,19 @@ namespace Dolores1810
 
         void Start()
         {
-            day = MakeSource(dayLoop);
-            night = MakeSource(nightLoop);
+            // Se desactivan los loops continuos de grillos/ambiente (amb_day y amb_night) para evitar el zumbido constante.
+            dayLoop = null;
+            nightLoop = null;
             bell = gameObject.AddComponent<AudioSource>();
             bell.playOnAwake = false;
             bell.spatialBlend = 0f;
-            bellTimer = Random.Range(12f, bellEverySeconds);
-        }
-
-        AudioSource MakeSource(AudioClip c)
-        {
-            var s = gameObject.AddComponent<AudioSource>();
-            s.clip = c;
-            s.loop = true;
-            s.playOnAwake = false;
-            s.spatialBlend = 0f;
-            s.volume = 0f;
-            if (c != null) s.Play();
-            return s;
+            bellTimer = Random.Range(18f, bellEverySeconds);
         }
 
         void Update()
         {
-            float n = cycle != null ? cycle.NightWeight : 0f;
-            float d = cycle != null ? cycle.DayWeight : 1f;
-            float v = GameSettings.Sfx * volume;
-            if (day != null) day.volume = Mathf.Lerp(day.volume, v * Mathf.Clamp01(d + (1f - n) * 0.3f), Time.unscaledDeltaTime * 2f);
-            if (night != null) night.volume = Mathf.Lerp(night.volume, v * n, Time.unscaledDeltaTime * 2f);
+            if (day != null && day.isPlaying) day.Stop();
+            if (night != null && night.isPlaying) night.Stop();
             var gs = GameSession.I;
             if (distantBell != null && gs != null && gs.State == GameState.Playing)
             {
@@ -52,7 +38,7 @@ namespace Dolores1810
                 {
                     bellTimer = bellEverySeconds + Random.Range(-10f, 15f);
                     bell.pitch = Random.Range(0.92f, 1.05f);
-                    bell.volume = GameSettings.Sfx * 0.22f;
+                    bell.volume = GameSettings.Sfx * 0.18f;
                     bell.clip = distantBell;
                     bell.Play();
                 }

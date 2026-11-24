@@ -42,7 +42,8 @@ namespace Dolores1810
                 rel = Mathf.Repeat(rel + tileWidth * 0.5f, tileWidth) - tileWidth * 0.5f;
                 x = cx + rel;
             }
-            float y = baseY + (cam.position.y - camBaseY) * speedY;
+            float effSpeedY = tileWidth > 0f && tileWidth < 30f ? Mathf.Max(speedY, 0.76f) : speedY;
+            float y = baseY + (cam.position.y - camBaseY) * effSpeedY;
             transform.position = new Vector3(x, y, transform.position.z);
         }
     }
