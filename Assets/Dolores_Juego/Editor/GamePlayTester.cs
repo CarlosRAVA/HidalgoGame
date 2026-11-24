@@ -755,7 +755,7 @@ namespace Dolores1810.EditorTools
         {
             int initialErrors = errorsLogged.Count;
 
-            string[] scenes = { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/Level1.unity", "Assets/Scenes/Level2.unity", "Assets/Scenes/Level3.unity" };
+            string[] scenes = { "Assets/Scenes/MainMenu.unity", "Assets/Scenes/Level1.unity", "Assets/Scenes/Level2.unity", "Assets/Scenes/Level3.unity", "Assets/Scenes/Level4.unity" };
             foreach (var sc in scenes)
             {
                 EditorSceneManager.OpenScene(sc);

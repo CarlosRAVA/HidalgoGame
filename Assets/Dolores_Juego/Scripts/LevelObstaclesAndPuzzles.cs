@@ -171,18 +171,19 @@ namespace Dolores1810
                 {
                     announced = true;
                     if (knight.hpBar != null) knight.hpBar.gameObject.SetActive(true);
-                    if (gs != null) gs.ShowToast("¡Mini-Jefe: " + miniBossTitle + "! Derrótalo para abrir la reja.", 3.4f);
+                    if (gs != null) gs.ShowToast("¡Mini-Jefe: " + miniBossTitle + "! Derrótalo para abrir la puerta.", 3.4f);
                     AudioHub.Play(SfxId.BossAlert, 0.05f, 0.85f);
                 }
             }
 
             if (knight != null && !knight.IsDead && blockingGate != null && !blockingGate.IsOpen)
             {
-                float maxAllowedX = blockingGate.transform.position.x - 0.85f;
-                if (knight.transform.position.x > maxAllowedX)
+                float maxAllowedX = blockingGate.transform.position.x - 0.9f;
+                float minAllowedX = blockingGate.transform.position.x - 5.8f;
+                if (knight.transform.position.x > maxAllowedX || knight.transform.position.x < minAllowedX)
                 {
                     Vector3 kp = knight.transform.position;
-                    kp.x = maxAllowedX;
+                    kp.x = Mathf.Clamp(kp.x, minAllowedX, maxAllowedX);
                     knight.transform.position = kp;
                 }
             }
@@ -207,7 +208,7 @@ namespace Dolores1810
         }
     }
 
-    /// <summary>Palanca de puzzle de 3 antorchas.</summary>
+    /// <summary>Palanca del puzzle de 3 antorchas: cada palanca enciende su antorcha de forma permanente sin repetirse.</summary>
     public class PuzzleTorchLever : MonoBehaviour, IInteractable
     {
         public LockGatePuzzle puzzle;
@@ -216,28 +217,24 @@ namespace Dolores1810
         SpriteRenderer sr;
         bool stateOn;
 
-        public string Prompt { get { return puzzle != null && puzzle.Solved ? "" : "Presiona E para accionar palanca " + (leverIndex + 1); } }
-        public bool Available { get { return puzzle != null && !puzzle.Solved; } }
+        public string Prompt { get { return (puzzle == null || puzzle.Solved || stateOn) ? "" : "Presiona E para encender antorcha " + (leverIndex + 1); } }
+        public bool Available { get { return puzzle != null && !puzzle.Solved && !stateOn; } }
         public bool HintOnly { get { return false; } }
 
         void Awake() { sr = GetComponent<SpriteRenderer>(); }
 
         public void Interact(PlatformerPlayer player)
         {
-            if (puzzle == null || puzzle.Solved) return;
-            stateOn = !stateOn;
-            if (sr != null)
-            {
-                if (stateOn && onSprite != null) sr.sprite = onSprite;
-                else if (!stateOn && offSprite != null) sr.sprite = offSprite;
-            }
+            if (puzzle == null || puzzle.Solved || stateOn) return;
+            stateOn = true;
+            if (sr != null && onSprite != null) sr.sprite = onSprite;
             AudioHub.Play(SfxId.Lever, 0.04f);
             Fx.Sparkle(transform.position + Vector3.up * 0.5f, new Color(1f, 0.85f, 0.35f, 1f));
-            puzzle.ToggleLever(leverIndex);
+            puzzle.ActivateTorch(leverIndex);
         }
     }
 
-    /// <summary>Puzzle de combinación: 3 palancas que encienden/apagan 3 antorchas para abrir la puerta.</summary>
+    /// <summary>Puzzle de las 3 antorchas: cada palanca enciende su antorcha de manera definitiva y al encender las 3 abre la puerta.</summary>
     public class LockGatePuzzle : MonoBehaviour
     {
         public bool[] torches = new bool[3];
@@ -251,16 +248,14 @@ namespace Dolores1810
             RefreshVisuals();
         }
 
-        public void ToggleLever(int index)
+        public void ActivateTorch(int index)
         {
-            if (Solved) return;
-            if (index == 0) { torches[0] = !torches[0]; torches[1] = !torches[1]; }
-            else if (index == 1) { torches[1] = !torches[1]; torches[2] = !torches[2]; }
-            else if (index == 2) { torches[0] = !torches[0]; }
-
+            if (Solved || index < 0 || index >= torches.Length) return;
+            torches[index] = true;
             RefreshVisuals();
 
-            if (torches[0] && torches[1] && torches[2])
+            int lit = (torches[0] ? 1 : 0) + (torches[1] ? 1 : 0) + (torches[2] ? 1 : 0);
+            if (lit >= 3)
             {
                 Solved = true;
                 if (gate != null)
@@ -272,13 +267,12 @@ namespace Dolores1810
                 if (GameSession.I != null)
                 {
                     GameSession.I.AddCoins(bonusCoins);
-                    GameSession.I.ShowToast("¡Acertijo resuelto! La puerta se ha abierto (+" + bonusCoins + " monedas)", 3.5f);
+                    GameSession.I.ShowToast("¡Las 3 antorchas están encendidas! ¡Puerta abierta! (+" + bonusCoins + " monedas)", 3.5f);
                 }
             }
             else if (GameSession.I != null)
             {
-                int lit = (torches[0] ? 1 : 0) + (torches[1] ? 1 : 0) + (torches[2] ? 1 : 0);
-                GameSession.I.ShowToast("Antorchas encendidas: " + lit + " / 3", 1.8f);
+                GameSession.I.ShowToast("Antorcha encendida (" + lit + " / 3)", 1.8f);
             }
         }
 
@@ -289,9 +283,9 @@ namespace Dolores1810
             {
                 if (torchGlows[i] == null) continue;
                 torchGlows[i].color = torches[i]
-                    ? new Color(0.35f, 1f, 0.5f, 0.98f)
-                    : new Color(0.35f, 0.25f, 0.25f, 0.35f);
-                torchGlows[i].transform.localScale = Vector3.one * (torches[i] ? 2.1f : 0.9f);
+                    ? new Color(1f, 0.78f, 0.22f, 0.98f)
+                    : new Color(0.32f, 0.25f, 0.25f, 0.35f);
+                torchGlows[i].transform.localScale = Vector3.one * (torches[i] ? 2.2f : 0.85f);
             }
         }
     }
@@ -413,123 +407,12 @@ namespace Dolores1810
         }
     }
 
-    /// <summary>Interruptor del puzzle contrarreloj en plataformas.</summary>
-    public class TimedSwitchNode : MonoBehaviour, IInteractable
-    {
-        public TimedSwitchPuzzle puzzle;
-        public int index;
-        public SpriteRenderer glow;
-        public Sprite offSprite, onSprite;
-        SpriteRenderer sr;
-        public bool active;
-
-        public string Prompt { get { return (puzzle != null && (puzzle.Solved || active)) ? "" : "Presiona E: Activar interruptor"; } }
-        public bool Available { get { return puzzle != null && !puzzle.Solved && !active; } }
-        public bool HintOnly { get { return false; } }
-
-        void Awake() { sr = GetComponent<SpriteRenderer>(); }
-
-        public void SetLit(bool lit)
-        {
-            active = lit;
-            if (sr != null)
-            {
-                if (lit && onSprite != null) sr.sprite = onSprite;
-                else if (!lit && offSprite != null) sr.sprite = offSprite;
-            }
-            if (glow != null)
-            {
-                glow.color = lit ? new Color(0.35f, 1f, 0.5f, 0.95f) : new Color(0.35f, 0.78f, 1f, 0.45f);
-                glow.transform.localScale = Vector3.one * (lit ? 2.1f : 1.2f);
-            }
-        }
-
-        public void Interact(PlatformerPlayer player)
-        {
-            if (puzzle != null) puzzle.TriggerNode(this);
-        }
-    }
-
-    /// <summary>Puzzle contrarreloj: activar 3 interruptores en plataformas antes de que expire el tiempo.</summary>
-    public class TimedSwitchPuzzle : MonoBehaviour
-    {
-        public TimedSwitchNode[] nodes;
-        public Gate gate;
-        public float timeLimit = 14f;
-        public int bonusCoins = 60;
-        public bool Solved { get; private set; }
-        float timer;
-        bool running;
-
-        void Start()
-        {
-            ResetNodes();
-        }
-
-        public void TriggerNode(TimedSwitchNode node)
-        {
-            if (Solved || node == null || node.active) return;
-            node.SetLit(true);
-            if (!running)
-            {
-                running = true;
-                timer = timeLimit;
-            }
-            AudioHub.Play(SfxId.Lever, 0.04f);
-            Fx.Sparkle(node.transform.position + Vector3.up * 0.6f, new Color(0.4f, 1f, 0.55f, 1f));
-
-            int count = 0;
-            for (int i = 0; i < nodes.Length; i++) if (nodes[i] != null && nodes[i].active) count++;
-            if (count >= nodes.Length)
-            {
-                Solved = true;
-                running = false;
-                if (gate != null)
-                {
-                    gate.Open();
-                    Fx.Sparkle(gate.transform.position + Vector3.up * 1.4f, new Color(0.4f, 1f, 0.55f, 1f));
-                }
-                AudioHub.Play(SfxId.Secret, 0f);
-                if (GameSession.I != null)
-                {
-                    GameSession.I.AddCoins(bonusCoins);
-                    GameSession.I.ShowToast("¡Interruptores activados a tiempo! ¡Puerta abierta! (+" + bonusCoins + " monedas)", 3.5f);
-                }
-            }
-            else if (GameSession.I != null)
-            {
-                GameSession.I.ShowToast("Interruptor " + count + "/" + nodes.Length + " · ¡Quedan " + Mathf.CeilToInt(timer) + "s!", 2.2f);
-            }
-        }
-
-        void Update()
-        {
-            if (!running || Solved) return;
-            timer -= Time.deltaTime;
-            if (timer <= 0f)
-            {
-                running = false;
-                ResetNodes();
-                AudioHub.Play(SfxId.Error, 0f);
-                if (GameSession.I != null)
-                    GameSession.I.ShowToast("¡Tiempo agotado! Los interruptores se reiniciaron.", 2.4f);
-            }
-        }
-
-        void ResetNodes()
-        {
-            if (nodes == null) return;
-            for (int i = 0; i < nodes.Length; i++)
-                if (nodes[i] != null) nodes[i].SetLit(false);
-        }
-    }
-
-    /// <summary>Construye obstáculos dinámicos, acertijos con puertas, mini-jefes y el jefe final de Nivel 1.</summary>
+    /// <summary>Construye obstáculos, acertijos con puertas cerradas, mini-jefes y el gran final compacto de los niveles 1, 2 y 3.</summary>
     public class LevelObstaclesAndPuzzles : MonoBehaviour
     {
         class Assets
         {
-            public Sprite spike, platform, leverOff, leverOn, fence, chestClosed, chestOpen, sign, glow, pixel, fallbackBox;
+            public Sprite spike, platform, leverOff, leverOn, doorSprite, chestClosed, chestOpen, sign, glow, flagCheckpoint, pixel, fallbackBox;
             public Sprite[] flagStripes; // 0 = Verde, 1 = Blanco con escudo, 2 = Rojo
             public Material litMat, unlitMat;
             public int groundLayer, enemyLayer;
@@ -551,6 +434,7 @@ namespace Dolores1810
                 case 1: BuildLevel1(gs, a); break;
                 case 2: BuildLevel2(gs, a); break;
                 case 3: BuildLevel3(gs, a); break;
+                case 4: BuildLevel4(gs, a); break;
             }
         }
 
@@ -581,15 +465,11 @@ namespace Dolores1810
             var lv = FindAnyObjectByType<GateLever>();
             if (lv != null) { a.leverOff = lv.offSprite; a.leverOn = lv.onSprite; }
 
-            var gt = FindAnyObjectByType<Gate>();
-            if (gt != null)
-            {
-                var sr = gt.GetComponentInChildren<SpriteRenderer>();
-                if (sr != null) a.fence = sr.sprite;
-            }
-
             var ch = FindAnyObjectByType<TreasureChest>();
             if (ch != null) { a.chestClosed = ch.closedSprite; a.chestOpen = ch.openSprite; }
+
+            var cp = FindAnyObjectByType<Checkpoint>();
+            if (cp != null && cp.flag != null) a.flagCheckpoint = cp.flag.sprite;
 
             var ig = FindAnyObjectByType<InteractGlow>();
             if (ig != null && ig.haloSprite != null) a.glow = ig.haloSprite;
@@ -605,13 +485,14 @@ namespace Dolores1810
 
             a.fallbackBox = MakeSolidSprite(new Color(0.55f, 0.42f, 0.28f, 1f), 32, 32);
             a.pixel = MakePivotLeftSprite(Color.white, 16, 16);
+            a.doorSprite = MakeColonialDoorSprite();
             if (a.spike == null) a.spike = MakeSolidSprite(new Color(0.85f, 0.25f, 0.2f, 1f), 32, 24);
             if (a.platform == null) a.platform = a.fallbackBox;
-            if (a.fence == null) a.fence = MakeSolidSprite(new Color(0.35f, 0.35f, 0.4f, 1f), 24, 64);
             if (a.leverOff == null) a.leverOff = a.fallbackBox;
             if (a.leverOn == null) a.leverOn = a.leverOff;
             if (a.chestClosed == null) a.chestClosed = a.fallbackBox;
             if (a.chestOpen == null) a.chestOpen = a.chestClosed;
+            if (a.flagCheckpoint == null) a.flagCheckpoint = a.sign;
 
             a.flagStripes = new Sprite[]
             {
@@ -642,6 +523,36 @@ namespace Dolores1810
             return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0f, 0.5f), 16f);
         }
 
+        /// <summary>Genera el sprite sólido de una puerta colonial de madera y herrajes para que siempre se vea claramente cerrada.</summary>
+        static Sprite MakeColonialDoorSprite()
+        {
+            const int w = 44, h = 176;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Bilinear;
+
+            Color frameDark = new Color(0.14f, 0.08f, 0.04f, 1f);
+            Color woodA = new Color(0.42f, 0.24f, 0.12f, 1f);
+            Color woodB = new Color(0.35f, 0.19f, 0.09f, 1f);
+            Color iron = new Color(0.24f, 0.25f, 0.28f, 1f);
+            Color goldStud = new Color(0.92f, 0.74f, 0.26f, 1f);
+
+            for (int y = 0; y < h; y++)
+            {
+                bool ironBand = (y >= 18 && y <= 28) || (y >= 82 && y <= 92) || (y >= 146 && y <= 156);
+                for (int x = 0; x < w; x++)
+                {
+                    bool border = x < 3 || x >= w - 3 || y < 3 || y >= h - 3;
+                    bool plankLine = (x == 14 || x == 29);
+                    Color c = border ? frameDark : (ironBand ? iron : (plankLine ? frameDark : ((x / 15) % 2 == 0 ? woodA : woodB)));
+                    if (ironBand && (x == 9 || x == 22 || x == 35) && (y == 23 || y == 87 || y == 151))
+                        c = goldStud;
+                    tex.SetPixel(x, y, c);
+                }
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 40f);
+        }
+
         /// <summary>Genera el sprite nítido de cada franja de la Bandera de México (0: Verde, 1: Blanco con águila, 2: Rojo).</summary>
         static Sprite MakeFlagStripeSprite(int kind)
         {
@@ -650,10 +561,10 @@ namespace Dolores1810
             tex.filterMode = FilterMode.Bilinear;
 
             Color mainCol = kind == 0
-                ? new Color(0.0f, 0.60f, 0.27f, 1f)     // Verde Bandera Mexicana (#009944)
+                ? new Color(0.0f, 0.60f, 0.27f, 1f)      // Verde Bandera Mexicana (#009944)
                 : (kind == 1
-                    ? new Color(0.98f, 0.98f, 0.99f, 1f) // Blanco Bandera Mexicana (#FAFAFC)
-                    : new Color(0.81f, 0.07f, 0.15f, 1f)); // Rojo Bandera Mexicana (#CE1126)
+                    ? new Color(0.98f, 0.98f, 0.99f, 1f)  // Blanco Bandera Mexicana (#FAFAFC)
+                    : new Color(0.81f, 0.07f, 0.15f, 1f));// Rojo Bandera Mexicana (#CE1126)
 
             Color borderDark = new Color(0.14f, 0.09f, 0.05f, 1f);
             Color goldTrim = new Color(0.92f, 0.74f, 0.24f, 1f);
@@ -689,83 +600,637 @@ namespace Dolores1810
             return Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), 48f);
         }
 
-        // ------------------------------------------------------------------ niveles
+        // ------------------------------------------------------------------ niveles (compactos ~276-336m con final claro)
         void BuildLevel1(GameSession gs, Assets a)
         {
-            // Obstáculos
-            SpawnFlameTrap(a, 84f, 0f, 0f);
-            SpawnSpikeBed(a, 214f, 0f, 4);
-            SpawnMovingPlatform(a, new Vector3(212f, 1.9f, 0f), new Vector3(220f, 1.9f, 0f), 3.2f, 2.2f);
-            SpawnMovingHazard(a, new Vector3(346f, 0f, 0f), new Vector3(354f, 0f, 0f), 3.1f);
-            SpawnPlatform(a, 350f, 2.15f, 3.4f);
-            SpawnFlameTrap(a, 478f, 0f, 0f);
-            SpawnFlameTrap(a, 483f, 0f, 2.2f);
-            SpawnMovingHazard(a, new Vector3(611f, 0f, 0f), new Vector3(619f, 0f, 0f), 3.3f);
-            SpawnPlatform(a, 615f, 2.15f, 3.4f);
-            SpawnFlameTrap(a, 675f, 0f, 0.5f);
+            DisableLaddersInRange(225f, 950f);
 
-            // Puzzle 1: Bandera Mexicana en orden (1° Verde, 2° Blanco, 3° Rojo) + Puerta que se abre al completarlo
-            SpawnSequencePuzzle(gs, a, "L1_puz1", 95f, 0f, 45, true);
-            // Puzzle 2: Combinación de 3 Palancas y Antorchas + Puerta
-            SpawnTorchPuzzle(gs, a, "L1_puz2", 324f, 0f, 55, false);
+            // Puzzle del Nivel 1: Bandera Mexicana en orden (1° Verde, 2° Blanco, 3° Rojo) + Puerta cerrada + Checkpoint
+            SpawnSequencePuzzle(gs, a, "L1_puz1", 62f, 0f, 45, true);
+            SpawnCheckpointAt(a, 78f, 0f, 10);
 
-            // Mini-Jefes que bloquean el paso hasta derrotarlos
-            SpawnMiniBoss(gs, a, "Sargento de la Plaza", 275f, 280.5f, 0f, 55, 2, new Color(1f, 0.85f, 0.55f, 1f), 35);
-            SpawnMiniBoss(gs, a, "Teniente de las Barricadas", 508f, 513.5f, 0f, 70, 2, new Color(0.85f, 0.92f, 1f, 1f), 40);
+            // Obstáculos dinámicos en el recorrido
+            SpawnFlameTrap(a, 88f, 0f, 0f);
+            SpawnMovingHazard(a, new Vector3(136f, 0f, 0f), new Vector3(144f, 0f, 0f), 3.1f);
+            SpawnPlatform(a, 140f, 2.15f, 3.4f);
 
-            // Jefe final del Nivel 1 (antes de la salida en x=772)
-            SpawnLevel1EndBoss(gs, a);
+            // Mini-Jefe que bloquea el paso justo frente a la segunda puerta cerrada (14 golpes = 140 HP)
+            SpawnMiniBoss(gs, a, "Sargento de la Plaza", 168.5f, 171f, 0f, 14, 2, new Color(1f, 0.85f, 0.55f, 1f), 40);
+            SpawnCheckpointAt(a, 191f, 0f, 11);
+
+            SpawnSpikeBed(a, 204f, 0f, 4);
+            SpawnMovingPlatform(a, new Vector3(202f, 1.9f, 0f), new Vector3(210f, 1.9f, 0f), 3.2f, 2.2f);
+
+            // Gran Final del Nivel 1: Arena del Jefe (Comandante realista en x=230..264) + Arco Final de Salida en x=276
+            SetupLevel1Finale(gs, a, 230f, 250f, 264f, 276f);
         }
 
         void BuildLevel2(GameSession gs, Assets a)
         {
-            // Obstáculos
-            SpawnFlameTrap(a, 64f, 0f, 0f);
-            SpawnMovingHazard(a, new Vector3(168f, 0f, 0f), new Vector3(176f, 0f, 0f), 3.4f);
-            SpawnPlatform(a, 172f, 2.15f, 3.4f);
-            SpawnFlameTrap(a, 308f, 0f, 0f);
-            SpawnFlameTrap(a, 313f, 0f, 2.2f);
-            SpawnSpikeBed(a, 444f, 0f, 4);
-            SpawnMovingPlatform(a, new Vector3(442f, 1.95f, 0f), new Vector3(450f, 1.95f, 0f), 3.2f, 2.4f);
-            SpawnMovingHazard(a, new Vector3(528f, 0f, 0f), new Vector3(536f, 0f, 0f), 3.5f);
-            SpawnPlatform(a, 532f, 2.15f, 3.4f);
-            SpawnFlameTrap(a, 680f, 0f, 1.1f);
+            // Liberar suelo de plataformas bajas en x=150..158 y quitar la escalera sin salida de x=329 y plataformas de la arena
+            DisablePlatformsInRange(145f, 165f, 0.5f, 6f);
+            DisableLaddersInRange(260f, 950f);
+            DisablePlatformsInRange(288f, 360f, 0.5f, 10f);
+            ClearZoneRange(204f, 224f);
 
-            // Puzzle 1: Contrarreloj en plataformas + Puerta
-            SpawnTimedPuzzle(gs, a, "L2_puz1",
-                new Vector3[] { new Vector3(146.5f, 0f, 0f), new Vector3(150f, 2.2f, 0f), new Vector3(158f, 3.5f, 0f) },
-                162.5f, 0f, 60, true);
-            // Puzzle 2: Bandera Mexicana en orden (1° Verde, 2° Blanco, 3° Rojo) + Puerta
-            SpawnSequencePuzzle(gs, a, "L2_puz2", 408f, 0f, 65, false);
+            SpawnFlameTrap(a, 56f, 0f, 0f);
 
-            // Mini-Jefes que bloquean el paso hasta derrotarlos
-            SpawnMiniBoss(gs, a, "Guardián del Arroyo", 270f, 275.5f, 0f, 75, 2, new Color(0.8f, 1f, 0.85f, 1f), 45);
-            SpawnMiniBoss(gs, a, "Comandante del Bosque", 647f, 652.5f, 0f, 90, 3, new Color(1f, 0.78f, 0.68f, 1f), 50);
+            // Acertijo 1 del Nivel 2: Las 3 Antorchas Insurgentes + Puerta cerrada + Checkpoint
+            SpawnTorchPuzzle(gs, a, "L2_puz1", 66f, 0f, 50, true);
+            SpawnCheckpointAt(a, 84f, 0f, 10);
+
+            // Acertijo 2 del Nivel 2 (pasando el puente y el mercader en x=140): Bandera Mexicana (1° Verde → 2° Blanco → 3° Rojo)
+            SpawnSequencePuzzle(gs, a, "L2_puz2", 152f, 0f, 60, true);
+
+            // Obstáculos dinámicos
+            SpawnMovingHazard(a, new Vector3(172f, 0f, 0f), new Vector3(180f, 0f, 0f), 3.4f);
+            SpawnPlatform(a, 176f, 2.15f, 3.4f);
+
+            // Mini-Jefe en la cima de la loma ANTES de la escalera del mirador (escalera en x=227.6 queda 100% libre)
+            SpawnMiniBoss(gs, a, "Guardián del Arroyo", 212.5f, 215f, 3f, 16, 2, new Color(0.8f, 1f, 0.85f, 1f), 45);
+
+            // Acertijo 3 del Nivel 2 (al bajar la loma en x=266): Las 3 Antorchas del Alba
+            SpawnTorchPuzzle(gs, a, "L2_puz3", 268f, 0f, 70, true);
+            RelocateNearestCheckpoint(280f, 283.5f, 0f);
+
+            // Gran Final del Nivel 2: Arena del Jefe (Capitán realista en x=290..324) + Arco Final del Amanecer en x=336
+            SetupLevel2Finale(gs, a, 290f, 310f, 324f, 336f);
         }
 
         void BuildLevel3(GameSession gs, Assets a)
         {
-            // Obstáculos
-            SpawnFlameTrap(a, 126f, 0f, 0f);
-            SpawnSpikeBed(a, 214f, 0f, 4);
-            SpawnMovingPlatform(a, new Vector3(212f, 1.95f, 0f), new Vector3(220f, 1.95f, 0f), 3.2f, 2.4f);
-            SpawnMovingHazard(a, new Vector3(235f, 0f, 0f), new Vector3(243f, 0f, 0f), 3.6f);
-            SpawnPlatform(a, 239f, 2.15f, 3.4f);
-            SpawnFlameTrap(a, 410f, 0f, 0f);
-            SpawnFlameTrap(a, 415f, 0f, 2.2f);
-            SpawnMovingHazard(a, new Vector3(532f, 0f, 0f), new Vector3(540f, 0f, 0f), 3.8f);
-            SpawnPlatform(a, 536f, 2.15f, 3.4f);
-            SpawnFlameTrap(a, 756f, 0f, 0f);
-            SpawnFlameTrap(a, 761f, 0f, 2.2f);
+            // Liberar suelo en x=56..72 y desactivar escaleras/plataformas posteriores a x=230
+            DisablePlatformsInRange(52f, 76f, 0.5f, 6f);
+            DisableLaddersInRange(230f, 950f);
+            DisablePlatformsInRange(230f, 950f, 0.5f, 10f);
 
-            // Puzzle 1: Combinación de 3 Palancas y Antorchas + Puerta
-            SpawnTorchPuzzle(gs, a, "L3_puz1", 58f, 0f, 70, false);
-            // Puzzle 2: Bandera Mexicana en orden (1° Verde, 2° Blanco, 3° Rojo) + Puerta
-            SpawnSequencePuzzle(gs, a, "L3_puz2", 256f, 0f, 80, true);
+            // Acertijo 1 del Nivel 3: Bandera Mexicana en orden (1° Verde, 2° Blanco, 3° Rojo)
+            SpawnSequencePuzzle(gs, a, "L3_puz1", 56f, 0f, 65, true);
+            SpawnCheckpointAt(a, 76f, 0f, 10);
 
-            // Mini-Jefes que bloquean el paso hasta derrotarlos
-            SpawnMiniBoss(gs, a, "Capitán de los Faroles", 293f, 298.5f, 0f, 95, 3, new Color(1f, 0.85f, 0.6f, 1f), 55);
-            SpawnMiniBoss(gs, a, "Guardia Mayor de la Parroquia", 555f, 560.5f, 0f, 110, 3, new Color(1f, 0.72f, 0.72f, 1f), 65);
+            // Acertijo 2 del Nivel 3 (después del mercader en x=92): Las 3 Antorchas de la Plaza
+            SpawnTorchPuzzle(gs, a, "L3_puz2", 106f, 0f, 75, true);
+            SpawnCheckpointAt(a, 124f, 0f, 11);
+
+            // Obstáculos dinámicos
+            SpawnFlameTrap(a, 138f, 0f, 0f);
+            SpawnFlameTrap(a, 143f, 0f, 2.2f);
+            SpawnSpikeBed(a, 180f, 0f, 4);
+            SpawnMovingPlatform(a, new Vector3(178f, 1.95f, 0f), new Vector3(186f, 1.95f, 0f), 3.2f, 2.4f);
+
+            // Mini-Jefe de la Plaza de Armas (16 golpes = 160 HP)
+            SpawnMiniBoss(gs, a, "Capitán de los Faroles", 213.5f, 216f, 0f, 16, 3, new Color(1f, 0.78f, 0.72f, 1f), 60);
+            SpawnCheckpointAt(a, 225f, 0f, 12);
+
+            // Final del Nivel 3: Jefe Coronel realista (desafiante pero accesible: 16 golpes = 160 HP) + Arco hacia el Nivel 4 en x=304
+            SetupLevel3Finale(gs, a, 236f, 260f, 280f, 304f);
+        }
+
+        void BuildLevel4(GameSession gs, Assets a)
+        {
+            // Liberar suelo en x=56..72 y desactivar escaleras/plataformas posteriores a x=230
+            DisablePlatformsInRange(52f, 76f, 0.5f, 6f);
+            DisableLaddersInRange(230f, 950f);
+            DisablePlatformsInRange(230f, 950f, 0.5f, 10f);
+
+            SpawnFlameTrap(a, 42f, 0f, 0.8f);
+
+            // Acertijo 1 del Nivel 4: Las 3 Antorchas de Dolores
+            SpawnTorchPuzzle(gs, a, "L4_puz1", 56f, 0f, 80, true);
+            SpawnCheckpointAt(a, 75f, 0f, 10);
+
+            // Acertijo 2 del Nivel 4 (después del mercader en x=92): Bandera Mexicana (1° Verde, 2° Blanco, 3° Rojo)
+            SpawnSequencePuzzle(gs, a, "L4_puz2", 108f, 0f, 90, true);
+            SpawnCheckpointAt(a, 126f, 0f, 11);
+
+            // Obstáculos más intensos rumbo a la Parroquia
+            SpawnFlameTrap(a, 138f, 0f, 0f);
+            SpawnFlameTrap(a, 143f, 0f, 1.5f);
+            SpawnFlameTrap(a, 148f, 0f, 3.0f);
+            SpawnSpikeBed(a, 180f, 0f, 4);
+            SpawnMovingPlatform(a, new Vector3(178f, 1.95f, 0f), new Vector3(186f, 1.95f, 0f), 3.2f, 2.6f);
+            SpawnMovingHazard(a, new Vector3(194f, 0f, 0f), new Vector3(202f, 0f, 0f), 3.7f);
+            SpawnPlatform(a, 198f, 2.15f, 3.4f);
+
+            // Mini-Jefe de Élite antes de la Parroquia (18 golpes = 180 HP)
+            SpawnMiniBoss(gs, a, "Inquisidor de la Corona", 213.5f, 216f, 0f, 18, 3, new Color(0.95f, 0.68f, 0.95f, 1f), 75);
+            SpawnCheckpointAt(a, 225f, 0f, 12);
+
+            // Gran Final del Nivel 4 y del Juego: General Realista (más difícil: 24 golpes = 240 HP, 4 corazones) + Campana de Dolores en x=310
+            SetupLevel4Finale(gs, a, 236f, 262f, 282f, 310f);
+        }
+
+        // ------------------------------------------------------------------ finales de nivel y recorte de longitud
+        void SetupLevel1Finale(GameSession gs, Assets a, float gateLeftX, float bossX, float gateRightX, float exitX)
+        {
+            ClearZoneRange(gateLeftX - 4f, exitX + 20f);
+            var existingBoss = FindAnyObjectByType<BossKnight>();
+            if (existingBoss != null) existingBoss.gameObject.SetActive(false);
+            var existingTrig = FindAnyObjectByType<BossArenaTrigger>();
+            if (existingTrig != null) existingTrig.gameObject.SetActive(false);
+
+            // Crear Jefe Final del Nivel 1
+            var tmpl = FindTemplateKnight();
+            if (tmpl != null)
+            {
+                var cfg = ScriptableObject.CreateInstance<EnemyConfig>();
+                cfg.displayName = "Comandante realista";
+                cfg.tier = EnemyTier.MuyResistente;
+                cfg.skin = tmpl.config != null ? tmpl.config.skin : 2;
+                cfg.tint = new Color(1f, 0.82f, 0.65f, 1f);
+                cfg.scale = 1.44f;
+                cfg.isBoss = true;
+                cfg.hitsToKill = 10;
+                cfg.heartsDamage = 2;
+                cfg.patrolSpeed = 1.5f;
+                cfg.chaseSpeed = 3.0f;
+                cfg.aggroRange = 12f;
+                cfg.loseRange = 20f;
+                cfg.attackRange = 2.5f;
+                cfg.attackCooldown = 1.8f;
+                cfg.staggerChance = 0f;
+                cfg.hitBoxSize = new Vector2(2.5f, 1.6f);
+                cfg.hitBoxOffset = new Vector2(1.5f, 1.0f);
+                cfg.colliderWidth = 1.1f;
+                cfg.colliderHeight = 2.0f;
+                cfg.coinReward = 45;
+                cfg.scoreValue = 650;
+
+                var root = new GameObject("Jefe_ComandanteNivel1");
+                root.layer = a.enemyLayer;
+                root.transform.SetParent(transform);
+                root.transform.position = new Vector3(bossX, 0.05f, 0f);
+                var rb = root.AddComponent<Rigidbody2D>();
+                rb.mass = 6f;
+                root.AddComponent<BoxCollider2D>();
+
+                var vis = new GameObject("Visual");
+                vis.transform.SetParent(root.transform, false);
+                var sr = vis.AddComponent<SpriteRenderer>();
+                sr.sortingOrder = 10;
+                if (a.litMat != null) sr.sharedMaterial = a.litMat;
+                var an = vis.AddComponent<FrameAnimator>();
+                an.target = sr;
+
+                Gate leftGate = SpawnArenaTrapGate(a, "RejaArenaIzq_N1", gateLeftX, 0f);
+                Gate rightGate = SpawnBlockingDoor(a, "PuertaSalidaJefe_N1", gateRightX, 0f, false,
+                    "¡Derrota al Comandante realista para abrir la salida del Nivel 1!");
+
+                var boss = root.AddComponent<BossKnight>();
+                boss.config = cfg;
+                boss.bossName = "Comandante realista";
+                boss.visual = sr;
+                boss.animator = an;
+                boss.idle = tmpl.idle;
+                boss.run = tmpl.run;
+                boss.attack = tmpl.attack;
+                boss.hurt = tmpl.hurt;
+                boss.die = tmpl.die;
+                boss.waveSprite = gs.dustSprite != null ? gs.dustSprite : a.glow;
+                boss.coinReward = 45;
+                boss.finalBoss = false;
+                boss.arenaGates = new Gate[] { leftGate };
+                boss.rewardGate = rightGate;
+                boss.InitConfig();
+
+                var trig = new GameObject("ArenaDelJefe_Nivel1");
+                trig.transform.SetParent(transform);
+                trig.transform.position = new Vector3(gateLeftX + 5f, 4f, 0f);
+                var tbc = trig.AddComponent<BoxCollider2D>();
+                tbc.isTrigger = true;
+                tbc.size = new Vector2(6f, 14f);
+                trig.AddComponent<BossArenaTrigger>().boss = boss;
+            }
+
+            // Mover SalidaDelNivel a exitX y construir Arco Triunfal de Salida
+            var exit = FindAnyObjectByType<LevelExit>();
+            if (exit != null)
+            {
+                exit.transform.position = new Vector3(exitX, 0f, 0f);
+            }
+            SpawnFinaleMonument(a, exitX, 0f, "¡FINAL DEL NIVEL 1! Cruza el arco para avanzar al Nivel 2");
+            FinalizeLevelBounds(gs, a, exitX, 5, 7, 2, 1);
+        }
+
+        void SetupLevel2Finale(GameSession gs, Assets a, float gateLeftX, float bossX, float gateRightX, float exitX)
+        {
+            ClearZoneRange(gateLeftX - 4f, exitX + 20f);
+
+            var boss = FindAnyObjectByType<BossKnight>();
+            if (boss != null)
+            {
+                boss.bossName = "Capitán realista";
+                boss.finalBoss = false;
+                boss.coinReward = 50;
+                boss.config = CloneBossConfig(boss.config, "Capitán realista", 14, 3, 3.0f, 1.45f, new Color(1f, 0.85f, 0.7f, 1f));
+                boss.Relocate(new Vector3(bossX, 0.05f, 0f));
+                Gate leftGate = SpawnArenaTrapGate(a, "RejaArenaIzq_N2", gateLeftX, 0f);
+                Gate rightGate = SpawnBlockingDoor(a, "PuertaSalidaJefe_N2", gateRightX, 0f, false,
+                    "¡Derrota al Capitán realista para abrir la salida del Nivel 2!");
+                if (boss.arenaGates != null)
+                {
+                    for (int i = 0; i < boss.arenaGates.Length; i++)
+                        if (boss.arenaGates[i] != null) boss.arenaGates[i].gameObject.SetActive(false);
+                }
+                if (boss.rewardGate != null) boss.rewardGate.gameObject.SetActive(false);
+                boss.arenaGates = new Gate[] { leftGate };
+                boss.rewardGate = rightGate;
+                boss.InitConfig();
+
+                var trig = FindAnyObjectByType<BossArenaTrigger>();
+                if (trig != null) trig.transform.position = new Vector3(gateLeftX + 5f, 4f, 0f);
+            }
+
+            var exit = FindAnyObjectByType<LevelExit>();
+            if (exit != null)
+            {
+                exit.transform.position = new Vector3(exitX, 0f, 0f);
+            }
+            SpawnFinaleMonument(a, exitX, 0f, "¡FINAL DEL NIVEL 2! Cruza el arco del alba hacia el Nivel 3");
+            FinalizeLevelBounds(gs, a, exitX, 5, 8, 2, 1);
+        }
+
+        void SetupLevel3Finale(GameSession gs, Assets a, float gateLeftX, float bossX, float gateRightX, float exitX)
+        {
+            ClearZoneRange(gateLeftX - 4f, exitX + 22f);
+
+            var boss = FindAnyObjectByType<BossKnight>();
+            if (boss != null)
+            {
+                boss.bossName = "Coronel realista";
+                boss.finalBoss = false;
+                boss.coinReward = 65;
+                boss.config = CloneBossConfig(boss.config, "Coronel realista", 16, 3, 3.15f, 1.48f, new Color(1f, 0.82f, 0.76f, 1f));
+                boss.Relocate(new Vector3(bossX, 0.05f, 0f));
+                Gate leftGate = SpawnArenaTrapGate(a, "RejaArenaIzq_N3", gateLeftX, 0f);
+                Gate rightGate = SpawnBlockingDoor(a, "PuertaSalidaJefe_N3", gateRightX, 0f, false,
+                    "¡Derrota al Coronel realista para abrir el paso hacia el Nivel 4!");
+                if (boss.arenaGates != null)
+                {
+                    for (int i = 0; i < boss.arenaGates.Length; i++)
+                        if (boss.arenaGates[i] != null) boss.arenaGates[i].gameObject.SetActive(false);
+                }
+                if (boss.rewardGate != null) boss.rewardGate.gameObject.SetActive(false);
+                boss.arenaGates = new Gate[] { leftGate };
+                boss.rewardGate = rightGate;
+                boss.InitConfig();
+
+                var trig = FindAnyObjectByType<BossArenaTrigger>();
+                if (trig != null) trig.transform.position = new Vector3(gateLeftX + 5f, 4f, 0f);
+            }
+
+            // En el Nivel 3 ocultamos la Parroquia y la Campana (que ahora son el gran final del Nivel 4)
+            var parroquia = GameObject.Find("Parroquia");
+            if (parroquia != null) parroquia.SetActive(false);
+
+            var goal = FindAnyObjectByType<LevelGoal>();
+            if (goal != null) goal.gameObject.SetActive(false);
+
+            // Crear o mover SalidaDelNivel hacia Level4
+            var exit = FindAnyObjectByType<LevelExit>();
+            if (exit == null)
+            {
+                var exitGo = new GameObject("SalidaDelNivel");
+                exitGo.transform.SetParent(transform);
+                var bc = exitGo.AddComponent<BoxCollider2D>();
+                bc.isTrigger = true;
+                bc.size = new Vector2(3f, 12f);
+                bc.offset = new Vector2(0f, 4f);
+                exit = exitGo.AddComponent<LevelExit>();
+            }
+            exit.gameObject.SetActive(true);
+            exit.transform.position = new Vector3(exitX, 0f, 0f);
+            exit.nextScene = "Level4";
+            exit.text = "Has liberado la Plaza de Armas.\nEl General Realista resguarda la Parroquia de Dolores para la batalla final...";
+
+            SpawnFinaleMonument(a, exitX, 0f, "¡FINAL DEL NIVEL 3! Cruza el arco hacia el Nivel 4: La Parroquia de Dolores");
+            FinalizeLevelBounds(gs, a, exitX, 6, 8, 2, 1);
+        }
+
+        void SetupLevel4Finale(GameSession gs, Assets a, float gateLeftX, float bossX, float gateRightX, float bellX)
+        {
+            ClearZoneRange(gateLeftX - 4f, bellX + 22f);
+
+            var boss = FindAnyObjectByType<BossKnight>();
+            if (boss != null)
+            {
+                boss.bossName = "General Realista";
+                boss.finalBoss = true;
+                boss.coinReward = 100;
+                boss.config = CloneBossConfig(boss.config, "General Realista", 24, 4, 3.65f, 1.58f, new Color(1f, 0.58f, 0.52f, 1f));
+                boss.Relocate(new Vector3(bossX, 0.05f, 0f));
+                Gate leftGate = SpawnArenaTrapGate(a, "RejaArenaIzq_N4", gateLeftX, 0f);
+                Gate rightGate = SpawnBlockingDoor(a, "PuertaSalidaJefe_N4", gateRightX, 0f, false,
+                    "¡Derrota al General Realista para llegar a la Campana de Dolores!");
+                if (boss.arenaGates != null)
+                {
+                    for (int i = 0; i < boss.arenaGates.Length; i++)
+                        if (boss.arenaGates[i] != null) boss.arenaGates[i].gameObject.SetActive(false);
+                }
+                if (boss.rewardGate != null) boss.rewardGate.gameObject.SetActive(false);
+                boss.arenaGates = new Gate[] { leftGate };
+                boss.rewardGate = rightGate;
+                boss.InitConfig();
+
+                var trig = FindAnyObjectByType<BossArenaTrigger>();
+                if (trig != null) trig.transform.position = new Vector3(gateLeftX + 5f, 4f, 0f);
+            }
+
+            var exit = FindAnyObjectByType<LevelExit>(FindObjectsInactive.Include);
+            if (exit != null) exit.gameObject.SetActive(false);
+
+            var parroquia = GameObject.Find("Parroquia");
+            if (parroquia != null)
+            {
+                parroquia.SetActive(true);
+                parroquia.transform.position = new Vector3(bellX - 11f, -0.05f, 0f);
+            }
+
+            var goal = FindAnyObjectByType<LevelGoal>(FindObjectsInactive.Include);
+            if (goal != null)
+            {
+                goal.gameObject.SetActive(true);
+                goal.transform.position = new Vector3(bellX, 0f, 0f);
+            }
+            SpawnFinaleMonument(a, bellX, 0f, "¡GRAN FINAL! Toca la Campana de Dolores para dar el Grito de Independencia");
+            FinalizeLevelBounds(gs, a, bellX, 6, 9, 2, 1);
+        }
+
+        EnemyConfig CloneBossConfig(EnemyConfig baseCfg, string displayName, int hitsToKill, int heartsDamage, float chaseSpeed, float scale, Color tint)
+        {
+            var cfg = ScriptableObject.CreateInstance<EnemyConfig>();
+            cfg.displayName = displayName;
+            cfg.tier = EnemyTier.MuyResistente;
+            cfg.skin = baseCfg != null ? baseCfg.skin : 3;
+            cfg.tint = tint;
+            cfg.scale = scale;
+            cfg.isBoss = true;
+            cfg.hitsToKill = hitsToKill;
+            cfg.heartsDamage = heartsDamage;
+            cfg.patrolSpeed = baseCfg != null ? baseCfg.patrolSpeed : 1.6f;
+            cfg.chaseSpeed = chaseSpeed;
+            cfg.aggroRange = 14f;
+            cfg.loseRange = 22f;
+            cfg.attackRange = 2.6f;
+            cfg.attackCooldown = 1.5f;
+            cfg.staggerChance = 0f;
+            cfg.hitBoxSize = new Vector2(2.6f, 1.6f);
+            cfg.hitBoxOffset = new Vector2(1.5f, 1.0f);
+            cfg.colliderWidth = baseCfg != null ? baseCfg.colliderWidth : 1.05f;
+            cfg.colliderHeight = baseCfg != null ? baseCfg.colliderHeight : 1.9f;
+            cfg.coinReward = 80;
+            cfg.scoreValue = 1500;
+            return cfg;
+        }
+
+        void DisableLaddersInRange(float xMin, float xMax)
+        {
+            var ladders = FindObjectsByType<ClimbZone>(FindObjectsInactive.Include);
+            for (int i = 0; i < ladders.Length; i++)
+            {
+                if (ladders[i] != null && ladders[i].transform.position.x >= xMin && ladders[i].transform.position.x <= xMax)
+                    ladders[i].gameObject.SetActive(false);
+            }
+        }
+
+        void DisablePlatformsInRange(float xMin, float xMax, float yMin, float yMax)
+        {
+            var effectors = FindObjectsByType<PlatformEffector2D>(FindObjectsInactive.Include);
+            for (int i = 0; i < effectors.Length; i++)
+            {
+                if (effectors[i] == null || effectors[i].transform.IsChildOf(transform)) continue;
+                Vector3 p = effectors[i].transform.position;
+                if (p.x >= xMin && p.x <= xMax && p.y >= yMin && p.y <= yMax)
+                {
+                    if (effectors[i].gameObject.name.Contains("Puente")) continue;
+                    effectors[i].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        void RelocateNearestCheckpoint(float nearX, float newX, float newY)
+        {
+            var cps = FindObjectsByType<Checkpoint>(FindObjectsInactive.Include);
+            for (int i = 0; i < cps.Length; i++)
+            {
+                if (cps[i] != null && !cps[i].transform.IsChildOf(transform) && Mathf.Abs(cps[i].transform.position.x - nearX) < 6f)
+                {
+                    cps[i].transform.position = new Vector3(newX, newY, 0f);
+                }
+            }
+        }
+
+        void ClearZoneRange(float xMin, float xMax)
+        {
+            var hazards = FindObjectsByType<Hazard>(FindObjectsInactive.Include);
+            for (int i = 0; i < hazards.Length; i++)
+            {
+                if (hazards[i] != null && hazards[i].transform.position.x >= xMin && hazards[i].transform.position.x <= xMax)
+                    hazards[i].gameObject.SetActive(false);
+            }
+            var knights = FindObjectsByType<EnemyKnight>(FindObjectsInactive.Include);
+            for (int i = 0; i < knights.Length; i++)
+            {
+                if (knights[i] != null && knights[i].GetComponent<MiniBossGuard>() == null &&
+                    knights[i].transform.position.x >= xMin && knights[i].transform.position.x <= xMax)
+                    knights[i].gameObject.SetActive(false);
+            }
+            var breakables = FindObjectsByType<Breakable>(FindObjectsInactive.Include);
+            for (int i = 0; i < breakables.Length; i++)
+            {
+                if (breakables[i] != null && breakables[i].transform.position.x >= xMin && breakables[i].transform.position.x <= xMax)
+                    breakables[i].gameObject.SetActive(false);
+            }
+        }
+
+        void FinalizeLevelBounds(GameSession gs, Assets a, float endX, int breakTarget, int killTarget, int chestTarget, int scrollTarget)
+        {
+            // Ajustar cámara y ciclo día/noche a la nueva longitud compacta
+            if (gs.cam != null) gs.cam.maxX = endX + 8f;
+            var dnc = FindAnyObjectByType<DayNightCycle>();
+            if (dnc != null) dnc.endX = Mathf.Max(80f, endX - 15f);
+
+            // Muro límite final detrás de la meta
+            var endWall = new GameObject("MuroFinalNivel");
+            endWall.layer = a.groundLayer;
+            endWall.transform.SetParent(transform);
+            endWall.transform.position = new Vector3(endX + 7f, 8f, 0f);
+            var wbc = endWall.AddComponent<BoxCollider2D>();
+            wbc.size = new Vector2(1.2f, 30f);
+
+            // Reubicar pergaminos y cofres que hayan quedado más allá del nuevo final para que puedan recogerse
+            float[] scrollSafeX = { 42f, 132f, 198f };
+            var scrolls = FindObjectsByType<Collectible>(FindObjectsInactive.Include);
+            int sIdx = 0;
+            for (int i = 0; i < scrolls.Length; i++)
+            {
+                if (scrolls[i] != null && scrolls[i].transform.position.x > endX - 25f)
+                {
+                    float nx = scrollSafeX[sIdx % scrollSafeX.Length] + sIdx * 3f;
+                    scrolls[i].transform.position = new Vector3(nx, 1.35f, 0f);
+                    sIdx++;
+                }
+            }
+
+            float[] chestSafeX = { 50f, 156f, 200f };
+            var chests = FindObjectsByType<TreasureChest>(FindObjectsInactive.Include);
+            int cIdx = 0;
+            for (int i = 0; i < chests.Length; i++)
+            {
+                if (chests[i] != null && chests[i].transform.position.x > endX - 25f)
+                {
+                    float nx = chestSafeX[cIdx % chestSafeX.Length] + cIdx * 3f;
+                    chests[i].transform.position = new Vector3(nx, 0f, 0f);
+                    cIdx++;
+                }
+            }
+
+            // Desactivar enemigos, rejas y palancas antiguas que no pertenezcan a este gestor o estén más allá del nuevo final
+            var knights = FindObjectsByType<EnemyKnight>(FindObjectsInactive.Include);
+            for (int i = 0; i < knights.Length; i++)
+            {
+                if (knights[i] != null && knights[i].transform.position.x > endX - 10f)
+                    knights[i].gameObject.SetActive(false);
+            }
+            var oldGates = FindObjectsByType<Gate>(FindObjectsInactive.Include);
+            for (int i = 0; i < oldGates.Length; i++)
+            {
+                if (oldGates[i] != null && !oldGates[i].transform.IsChildOf(transform))
+                    oldGates[i].gameObject.SetActive(false);
+            }
+            var oldLevers = FindObjectsByType<GateLever>(FindObjectsInactive.Include);
+            for (int i = 0; i < oldLevers.Length; i++)
+            {
+                if (oldLevers[i] != null && !oldLevers[i].transform.IsChildOf(transform))
+                    oldLevers[i].gameObject.SetActive(false);
+            }
+
+            // Ajustar metas de las misiones a la nueva duración compacta del nivel
+            if (gs.missions != null)
+            {
+                for (int i = 0; i < gs.missions.Length; i++)
+                {
+                    var m = gs.missions[i];
+                    if (m == null) continue;
+                    switch (m.kind)
+                    {
+                        case MissionKind.Break:
+                            m.target = breakTarget;
+                            m.text = "Rompe " + breakTarget + " cajas o barriles";
+                            break;
+                        case MissionKind.Kills:
+                            m.target = killTarget;
+                            m.text = "Derrota " + killTarget + " soldados";
+                            break;
+                        case MissionKind.Chests:
+                            m.target = chestTarget;
+                            m.text = "Abre " + chestTarget + " cofres";
+                            break;
+                        case MissionKind.Collect:
+                            m.target = scrollTarget;
+                            m.text = scrollTarget == 1 ? "Encuentra 1 pergamino histórico" : ("Encuentra " + scrollTarget + " pergaminos históricos");
+                            break;
+                    }
+                }
+                gs.RaiseStats();
+            }
+        }
+
+        void SpawnFinaleMonument(Assets a, float x, float y, string bannerHint)
+        {
+            var arch = new GameObject("ArcoFinalNivel");
+            arch.transform.SetParent(transform);
+            arch.transform.position = new Vector3(x, y, 0f);
+
+            // Columnas laterales del arco final
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var col = new GameObject("Columna_" + side);
+                col.transform.SetParent(arch.transform, false);
+                col.transform.localPosition = new Vector3(side * 2.1f, 2.1f, 0f);
+                var csr = col.AddComponent<SpriteRenderer>();
+                csr.sprite = a.platform;
+                csr.color = new Color(0.52f, 0.38f, 0.24f, 1f);
+                csr.sortingOrder = -6;
+                if (a.litMat != null) csr.sharedMaterial = a.litMat;
+                csr.drawMode = SpriteDrawMode.Sliced;
+                csr.size = new Vector2(0.55f, 4.2f);
+
+                var glow = new GameObject("LuzFinal_" + side);
+                glow.transform.SetParent(arch.transform, false);
+                glow.transform.localPosition = new Vector3(side * 2.1f, 3.8f, 0f);
+                var gsr = glow.AddComponent<SpriteRenderer>();
+                gsr.sprite = a.glow;
+                gsr.color = new Color(1f, 0.85f, 0.35f, 0.85f);
+                gsr.sortingOrder = 14;
+                if (a.unlitMat != null) gsr.sharedMaterial = a.unlitMat;
+                glow.transform.localScale = Vector3.one * 2.4f;
+            }
+
+            // Dintel superior del Arco Triunfal
+            var top = new GameObject("DintelFinal");
+            top.transform.SetParent(arch.transform, false);
+            top.transform.localPosition = new Vector3(0f, 4.3f, 0f);
+            var tsr = top.AddComponent<SpriteRenderer>();
+            tsr.sprite = a.platform;
+            tsr.color = new Color(0.75f, 0.56f, 0.25f, 1f);
+            tsr.sortingOrder = -5;
+            if (a.litMat != null) tsr.sharedMaterial = a.litMat;
+            tsr.drawMode = SpriteDrawMode.Tiled;
+            tsr.tileMode = SpriteTileMode.Continuous;
+            tsr.size = new Vector2(5.0f, 0.48f);
+
+            // Bandera Mexicana coronando el Arco Final (Verde, Blanco con escudo, Rojo)
+            for (int i = 0; i < 3; i++)
+            {
+                var fs = new GameObject("BanderaFinal_" + i);
+                fs.transform.SetParent(arch.transform, false);
+                fs.transform.localPosition = new Vector3((i - 1) * 0.82f, 5.15f, 0f);
+                var fsr = fs.AddComponent<SpriteRenderer>();
+                fsr.sprite = a.flagStripes[i];
+                fsr.sortingOrder = 15;
+                if (a.unlitMat != null) fsr.sharedMaterial = a.unlitMat;
+                fs.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
+            }
+
+            SpawnClueSign(a, x - 2.6f, y, bannerHint);
+        }
+
+        void SpawnCheckpointAt(Assets a, float x, float y, int index)
+        {
+            var root = new GameObject("Banderines_Extra_" + index);
+            root.transform.SetParent(transform);
+            root.transform.position = new Vector3(x, y, 0f);
+            var flagGo = new GameObject("Banderines");
+            flagGo.transform.SetParent(root.transform, false);
+            flagGo.transform.localPosition = new Vector3(0f, -0.02f, 0f);
+            var flag = flagGo.AddComponent<SpriteRenderer>();
+            flag.sprite = a.flagCheckpoint;
+            flag.sortingOrder = -8;
+            if (a.litMat != null) flag.sharedMaterial = a.litMat;
+
+            var glowGo = new GameObject("Brillo");
+            glowGo.transform.SetParent(root.transform, false);
+            glowGo.transform.localPosition = new Vector3(0f, 1.3f, 0f);
+            var glow = glowGo.AddComponent<SpriteRenderer>();
+            glow.sprite = a.glow;
+            glow.color = new Color(1f, 0.9f, 0.5f, 0f);
+            glow.sortingOrder = -7;
+            if (a.unlitMat != null) glow.sharedMaterial = a.unlitMat;
+            glowGo.transform.localScale = Vector3.one * 3.2f;
+
+            var spawn = new GameObject("Reaparicion");
+            spawn.transform.SetParent(root.transform, false);
+            spawn.transform.localPosition = new Vector3(0f, 0.1f, 0f);
+            var bc = root.AddComponent<BoxCollider2D>();
+            bc.isTrigger = true;
+            bc.size = new Vector2(3.2f, 4f);
+            bc.offset = new Vector2(0f, 2f);
+            var cp = root.AddComponent<Checkpoint>();
+            cp.index = index;
+            cp.flag = flag;
+            cp.glow = glow;
+            cp.spawn = spawn.transform;
         }
 
         // ------------------------------------------------------------------ constructores de obstáculos
@@ -917,13 +1382,41 @@ namespace Dolores1810
         }
 
         // ------------------------------------------------------------------ puertas de bloqueo y recompensas
+        /// <summary>Reja de entrada de arena de jefe: permanece oculta mientras está abierta y solo baja al iniciar el combate.</summary>
+        Gate SpawnArenaTrapGate(Assets a, string doorName, float x, float y)
+        {
+            var gateGo = new GameObject(doorName);
+            gateGo.layer = a.groundLayer;
+            gateGo.transform.SetParent(transform);
+            gateGo.transform.position = new Vector3(x, y + 2.2f, 0f);
+
+            var doorVis = new GameObject("HojaPuerta");
+            doorVis.transform.SetParent(gateGo.transform, false);
+            var dsr = doorVis.AddComponent<SpriteRenderer>();
+            dsr.sprite = a.doorSprite;
+            dsr.sortingOrder = 7;
+            if (a.litMat != null) dsr.sharedMaterial = a.litMat;
+
+            var gateCol = gateGo.AddComponent<BoxCollider2D>();
+            gateCol.size = new Vector2(1.0f, 4.4f);
+
+            var gate = gateGo.AddComponent<Gate>();
+            gate.openOffset = new Vector3(0f, 4.6f, 0f);
+            gate.startOpen = true;
+            gate.hideWhenOpen = true;
+            gate.blocker = gateCol;
+            gate.Init();
+            return gate;
+        }
+
+        /// <summary>Puerta colonial sólida y siempre cerrada al inicio (para puzzles, mini-jefes y salida de jefe).</summary>
         Gate SpawnBlockingDoor(Assets a, string doorName, float x, float y, bool startOpen, string closedHint)
         {
             var doorRoot = new GameObject("Marco_" + doorName);
             doorRoot.transform.SetParent(transform);
             doorRoot.transform.position = new Vector3(x, y, 0f);
 
-            // Dintel superior del marco de la puerta
+            // Dintel superior decorativo del marco de la puerta (sin colisionador superior para no bloquear escaleras ni plataformas)
             var header = new GameObject("Dintel");
             header.transform.SetParent(doorRoot.transform, false);
             header.transform.localPosition = new Vector3(0f, 4.45f, 0f);
@@ -934,52 +1427,41 @@ namespace Dolores1810
             if (a.litMat != null) hsr.sharedMaterial = a.litMat;
             hsr.drawMode = SpriteDrawMode.Tiled;
             hsr.tileMode = SpriteTileMode.Continuous;
-            hsr.size = new Vector2(1.6f, 0.42f);
+            hsr.size = new Vector2(1.7f, 0.45f);
 
-            // Luz indicadora de estado (Rojo = cerrada, Verde = abierta)
-            var lightGo = new GameObject("LuzEstadoPuerta");
-            lightGo.transform.SetParent(doorRoot.transform, false);
-            lightGo.transform.localPosition = new Vector3(0f, 4.5f, 0f);
-            var lsr = lightGo.AddComponent<SpriteRenderer>();
-            lsr.sprite = a.glow;
-            lsr.sortingOrder = 16;
-            if (a.unlitMat != null) lsr.sharedMaterial = a.unlitMat;
-            lightGo.transform.localScale = Vector3.one * 1.6f;
-
-            // Reja móvil que sube al abrirse
+            // Hoja sólida de la puerta que llega hasta el suelo (y = 0 .. 4.4m) y desaparece al abrirse
             var gateGo = new GameObject(doorName);
             gateGo.layer = a.groundLayer;
             gateGo.transform.SetParent(doorRoot.transform, false);
             gateGo.transform.localPosition = new Vector3(0f, 2.2f, 0f);
-            for (int i = 0; i < 4; i++)
-            {
-                var bar = new GameObject("Barrotes_" + i);
-                bar.transform.SetParent(gateGo.transform, false);
-                bar.transform.localPosition = new Vector3(0f, -2.2f + i * 1.1f, 0f);
-                var bsr = bar.AddComponent<SpriteRenderer>();
-                bsr.sprite = a.fence;
-                bsr.sortingOrder = 7;
-                if (a.litMat != null) bsr.sharedMaterial = a.litMat;
-                bar.transform.localScale = new Vector3(1.15f, 1.15f, 1f);
-            }
+
+            var doorVis = new GameObject("HojaPuerta");
+            doorVis.transform.SetParent(gateGo.transform, false);
+            doorVis.transform.localPosition = Vector3.zero;
+            var dsr = doorVis.AddComponent<SpriteRenderer>();
+            dsr.sprite = a.doorSprite;
+            dsr.sortingOrder = 7;
+            if (a.litMat != null) dsr.sharedMaterial = a.litMat;
+
             var gateCol = gateGo.AddComponent<BoxCollider2D>();
-            gateCol.size = new Vector2(0.9f, 4.4f);
+            gateCol.size = new Vector2(1.05f, 4.4f);
 
             var gate = gateGo.AddComponent<Gate>();
             gate.openOffset = new Vector3(0f, 4.6f, 0f);
-            gate.startOpen = startOpen;
+            gate.startOpen = false;
+            gate.hideWhenOpen = true;
             gate.blocker = gateCol;
-            gate.statusLight = lsr;
+            gate.statusLight = null;
             gate.Init();
 
             if (!string.IsNullOrEmpty(closedHint))
             {
                 var hintGo = new GameObject("AvisoPuerta");
                 hintGo.transform.SetParent(doorRoot.transform, false);
-                hintGo.transform.localPosition = new Vector3(-0.7f, 1.1f, 0f);
+                hintGo.transform.localPosition = new Vector3(-0.75f, 1.1f, 0f);
                 var hbc = hintGo.AddComponent<BoxCollider2D>();
                 hbc.isTrigger = true;
-                hbc.size = new Vector2(1.4f, 2.4f);
+                hbc.size = new Vector2(1.5f, 2.4f);
                 var phs = hintGo.AddComponent<PuzzleHintSign>();
                 phs.hintText = closedHint;
                 phs.linkedGate = gate;
@@ -992,10 +1474,9 @@ namespace Dolores1810
         {
             Gate gate = SpawnBlockingDoor(a, "PuertaPuzzle_" + chestId, doorX, y, false, closedHint);
 
-            // Cofre de recompensa justo detrás de la puerta (accesible en cuanto se abre la puerta)
             var chGo = new GameObject("CofrePuzzle_" + chestId);
             chGo.transform.SetParent(transform);
-            chGo.transform.position = new Vector3(doorX + 2.1f, y, 0f);
+            chGo.transform.position = new Vector3(doorX + 2.0f, y, 0f);
             var chSr = chGo.AddComponent<SpriteRenderer>();
             chSr.sprite = a.chestClosed;
             chSr.sortingOrder = 12;
@@ -1018,7 +1499,7 @@ namespace Dolores1810
             {
                 var hGo = new GameObject("CorazonPuzzle");
                 hGo.transform.SetParent(transform);
-                hGo.transform.position = new Vector3(doorX + 3.2f, y + 0.75f, 0f);
+                hGo.transform.position = new Vector3(doorX + 3.1f, y + 0.75f, 0f);
                 var hSr = hGo.AddComponent<SpriteRenderer>();
                 hSr.sprite = gs.heartSprite;
                 hSr.sortingOrder = 15;
@@ -1057,13 +1538,14 @@ namespace Dolores1810
         // ------------------------------------------------------------------ puzzles
         void SpawnTorchPuzzle(GameSession gs, Assets a, string id, float startX, float y, int coins, bool withHeart)
         {
-            SpawnClueSign(a, startX, y, "Acertijo de las Antorchas: Enciende las 3 llamas a la vez con las palancas (E) para abrir la puerta");
+            ClearZoneRange(startX - 1f, startX + 12f);
+            SpawnClueSign(a, startX, y, "Acertijo de las Antorchas: Enciende las 3 antorchas con E para abrir la puerta");
 
             var ctrlGo = new GameObject("PuzzleAntorchas_" + id);
             ctrlGo.transform.SetParent(transform);
             var ctrl = ctrlGo.AddComponent<LockGatePuzzle>();
             ctrl.bonusCoins = coins;
-            ctrl.torches = new bool[] { false, true, false };
+            ctrl.torches = new bool[] { false, false, false };
             ctrl.torchGlows = new SpriteRenderer[3];
 
             for (int i = 0; i < 3; i++)
@@ -1106,6 +1588,7 @@ namespace Dolores1810
         /// <summary>Puzzle de la Bandera Mexicana: colores reales en orden (1° Izquierda Verde, 2° Centro Blanco, 3° Derecha Rojo).</summary>
         void SpawnSequencePuzzle(GameSession gs, Assets a, string id, float startX, float y, int coins, bool withHeart)
         {
+            ClearZoneRange(startX - 1f, startX + 12f);
             SpawnClueSign(a, startX, y, "Acertijo de la Bandera (E): Iza en orden 1° Verde → 2° Blanco → 3° Rojo para abrir la puerta");
 
             var ctrlGo = new GameObject("PuzzleBandera_" + id);
@@ -1113,7 +1596,6 @@ namespace Dolores1810
             var ctrl = ctrlGo.AddComponent<SequencePuzzleController>();
             ctrl.bonusCoins = coins;
 
-            // Colores oficiales de la Bandera Mexicana en orden correcto de izquierda a derecha: Verde, Blanco, Rojo
             string[] names = { "Verde", "Blanco", "Rojo" };
             Color[] colors =
             {
@@ -1126,7 +1608,6 @@ namespace Dolores1810
             ctrl.gate = SpawnPuzzleDoorAndReward(gs, a, id, doorX, y, coins, withHeart,
                 "Puerta cerrada: Forma la Bandera Mexicana en orden (1° Verde, 2° Blanco, 3° Rojo) con E");
 
-            // Marco de la Bandera Mexicana completa sobre la puerta que se ilumina franja por franja
             var flagBoard = new GameObject("BanderaSobrePuerta");
             flagBoard.transform.SetParent(ctrlGo.transform);
             flagBoard.transform.position = new Vector3(doorX, y + 3.1f, 0f);
@@ -1139,7 +1620,6 @@ namespace Dolores1810
                 pGo.transform.SetParent(ctrlGo.transform);
                 pGo.transform.position = new Vector3(px, y, 0f);
 
-                // Poste / mástil del estandarte
                 var poleGo = new GameObject("Poste");
                 poleGo.transform.SetParent(pGo.transform, false);
                 poleGo.transform.localPosition = new Vector3(0f, 1.15f, 0f);
@@ -1151,7 +1631,6 @@ namespace Dolores1810
                 poleSr.drawMode = SpriteDrawMode.Sliced;
                 poleSr.size = new Vector2(0.22f, 2.3f);
 
-                // Placa base con el color de la franja siempre visible
                 var baseGo = new GameObject("BaseColor");
                 baseGo.transform.SetParent(pGo.transform, false);
                 baseGo.transform.localPosition = new Vector3(0f, 0.25f, 0f);
@@ -1161,7 +1640,6 @@ namespace Dolores1810
                 if (a.unlitMat != null) baseSr.sharedMaterial = a.unlitMat;
                 baseGo.transform.localScale = new Vector3(0.75f, 0.35f, 1f);
 
-                // Estandarte / Franja de la bandera que se iza al activar con E
                 var bannerGo = new GameObject("FranjaBandera_" + names[i]);
                 bannerGo.transform.SetParent(pGo.transform, false);
                 bannerGo.transform.localPosition = new Vector3(0f, 0.95f, 0f);
@@ -1170,7 +1648,6 @@ namespace Dolores1810
                 bannerSr.sortingOrder = 11;
                 if (a.unlitMat != null) bannerSr.sharedMaterial = a.unlitMat;
 
-                // Franja correspondiente en la bandera completa junto a la puerta (Izquierda Verde, Centro Blanco, Derecha Rojo)
                 var doorStripeGo = new GameObject("FranjaPuerta_" + names[i]);
                 doorStripeGo.transform.SetParent(flagBoard.transform, false);
                 doorStripeGo.transform.localPosition = new Vector3((i - 1) * 0.78f, 0f, 0f);
@@ -1180,7 +1657,6 @@ namespace Dolores1810
                 if (a.unlitMat != null) doorStripeSr.sharedMaterial = a.unlitMat;
                 doorStripeGo.transform.localScale = new Vector3(0.76f, 0.76f, 1f);
 
-                // Halo luminoso del color patrio
                 var glGo = new GameObject("Brillo");
                 glGo.transform.SetParent(pGo.transform, false);
                 glGo.transform.localPosition = new Vector3(0f, 1.35f, 0f);
@@ -1196,7 +1672,7 @@ namespace Dolores1810
 
                 var node = pGo.AddComponent<SequencePedestal>();
                 node.controller = ctrl;
-                node.orderId = i; // 0 = Verde, 1 = Blanco, 2 = Rojo (en orden)
+                node.orderId = i;
                 node.labelName = names[i];
                 node.flagColor = colors[i];
                 node.bannerRenderer = bannerSr;
@@ -1208,53 +1684,7 @@ namespace Dolores1810
             ctrl.pedestals = nodes;
         }
 
-        void SpawnTimedPuzzle(GameSession gs, Assets a, string id, Vector3[] positions, float doorX, float doorY, int coins, bool withHeart)
-        {
-            SpawnClueSign(a, positions[0].x - 1.6f, positions[0].y, "Acertijo Contrarreloj: Activa los 3 interruptores con E en menos de 14s para abrir la puerta");
-
-            var ctrlGo = new GameObject("PuzzleContrarreloj_" + id);
-            ctrlGo.transform.SetParent(transform);
-            var ctrl = ctrlGo.AddComponent<TimedSwitchPuzzle>();
-            ctrl.bonusCoins = coins;
-            ctrl.timeLimit = 14f;
-
-            var nodes = new TimedSwitchNode[positions.Length];
-            for (int i = 0; i < positions.Length; i++)
-            {
-                var swGo = new GameObject("Interruptor_" + i);
-                swGo.transform.SetParent(ctrlGo.transform);
-                swGo.transform.position = positions[i];
-                var sr = swGo.AddComponent<SpriteRenderer>();
-                sr.sprite = a.leverOff;
-                sr.sortingOrder = -3;
-                if (a.litMat != null) sr.sharedMaterial = a.litMat;
-                var bc = swGo.AddComponent<BoxCollider2D>();
-                bc.isTrigger = true;
-                bc.size = new Vector2(1.1f, 1.2f);
-                bc.offset = new Vector2(0f, 0.55f);
-
-                var glGo = new GameObject("Luz");
-                glGo.transform.SetParent(swGo.transform, false);
-                glGo.transform.localPosition = new Vector3(0f, 1.25f, 0f);
-                var glSr = glGo.AddComponent<SpriteRenderer>();
-                glSr.sprite = a.glow;
-                glSr.sortingOrder = 15;
-                if (a.unlitMat != null) glSr.sharedMaterial = a.unlitMat;
-
-                var nd = swGo.AddComponent<TimedSwitchNode>();
-                nd.puzzle = ctrl;
-                nd.index = i;
-                nd.offSprite = a.leverOff;
-                nd.onSprite = a.leverOn;
-                nd.glow = glSr;
-                nodes[i] = nd;
-            }
-            ctrl.nodes = nodes;
-            ctrl.gate = SpawnPuzzleDoorAndReward(gs, a, id, doorX, doorY, coins, withHeart,
-                "Puerta cerrada: Activa los 3 interruptores en las plataformas en menos de 14s");
-        }
-
-        // ------------------------------------------------------------------ mini-jefes y jefe final de nivel 1
+        // ------------------------------------------------------------------ mini-jefes
         EnemyKnight FindTemplateKnight()
         {
             var all = FindObjectsByType<EnemyKnight>(FindObjectsInactive.Include);
@@ -1271,30 +1701,31 @@ namespace Dolores1810
 
         void SpawnMiniBoss(GameSession gs, Assets a, string title, float x, float gateX, float y, int hitsToKill, int heartsDamage, Color tint, int coinReward)
         {
+            ClearZoneRange(gateX - 8f, gateX + 3f);
             var tmpl = FindTemplateKnight();
             if (tmpl == null) return;
 
             var cfg = ScriptableObject.CreateInstance<EnemyConfig>();
             cfg.displayName = title;
-            cfg.tier = EnemyTier.Resistente;
+            cfg.tier = EnemyTier.MuyResistente;
             cfg.skin = tmpl.config != null ? tmpl.config.skin : 2;
             cfg.tint = tint;
-            cfg.scale = 1.32f;
-            cfg.hitsToKill = Mathf.Max(5, hitsToKill / 10);
+            cfg.scale = 1.34f;
+            cfg.hitsToKill = Mathf.Max(12, hitsToKill);
             cfg.heartsDamage = heartsDamage;
-            cfg.patrolSpeed = 1.4f;
-            cfg.chaseSpeed = 3.1f;
-            cfg.aggroRange = 10f;
-            cfg.loseRange = 16f;
+            cfg.patrolSpeed = 1.2f;
+            cfg.chaseSpeed = 3.0f;
+            cfg.aggroRange = 6.2f;
+            cfg.loseRange = 9.5f;
             cfg.attackRange = 2.4f;
-            cfg.attackCooldown = 1.5f;
-            cfg.staggerChance = 0.25f;
+            cfg.attackCooldown = 1.45f;
+            cfg.staggerChance = 0.15f;
             cfg.hitBoxSize = new Vector2(2.4f, 1.5f);
             cfg.hitBoxOffset = new Vector2(1.5f, 0.95f);
             cfg.colliderWidth = 1.1f;
             cfg.colliderHeight = 2.0f;
             cfg.coinReward = coinReward;
-            cfg.scoreValue = 350;
+            cfg.scoreValue = 400;
             cfg.appleChance = 0.5f;
             cfg.dropsHeart = true;
 
@@ -1318,7 +1749,7 @@ namespace Dolores1810
 
             var ek = root.AddComponent<EnemyKnight>();
             ek.config = cfg;
-            ek.patrolRadius = 2.5f;
+            ek.patrolRadius = 0.9f;
             ek.visual = sr;
             ek.animator = an;
             ek.idle = tmpl.idle;
@@ -1328,19 +1759,18 @@ namespace Dolores1810
             ek.hurt = tmpl.hurt;
             ek.die = tmpl.die;
 
-            // Barra de vida sobre el Mini-Jefe
             var bar = new GameObject("BarraVida");
             bar.transform.SetParent(root.transform, false);
-            bar.transform.localPosition = new Vector3(-0.75f, cfg.colliderHeight * cfg.scale + 0.5f, 0f);
+            bar.transform.localPosition = new Vector3(-0.85f, cfg.colliderHeight * cfg.scale + 0.55f, 0f);
             var back = new GameObject("Fondo");
             back.transform.SetParent(bar.transform, false);
             back.transform.localPosition = new Vector3(-0.04f, 0f, 0f);
             var bsr = back.AddComponent<SpriteRenderer>();
             bsr.sprite = a.pixel;
-            bsr.color = new Color(0.08f, 0.03f, 0.03f, 0.92f);
+            bsr.color = new Color(0.08f, 0.03f, 0.03f, 0.94f);
             bsr.sortingOrder = 40;
             if (a.unlitMat != null) bsr.sharedMaterial = a.unlitMat;
-            back.transform.localScale = new Vector3(1.58f, 0.24f, 1f);
+            back.transform.localScale = new Vector3(1.78f, 0.24f, 1f);
 
             var fill = new GameObject("Vida");
             fill.transform.SetParent(bar.transform, false);
@@ -1349,112 +1779,36 @@ namespace Dolores1810
             fsr.color = new Color(0.95f, 0.72f, 0.2f, 1f);
             fsr.sortingOrder = 41;
             if (a.unlitMat != null) fsr.sharedMaterial = a.unlitMat;
-            fill.transform.localScale = new Vector3(1.5f, 0.18f, 1f);
+            fill.transform.localScale = new Vector3(1.7f, 0.18f, 1f);
+
+            var lblGo = new GameObject("NombreMiniJefe");
+            lblGo.transform.SetParent(bar.transform, false);
+            lblGo.transform.localPosition = new Vector3(0.85f, 0.20f, 0f);
+            var tm = lblGo.AddComponent<TextMesh>();
+            tm.text = title;
+            tm.characterSize = 0.095f;
+            tm.fontSize = 36;
+            tm.anchor = TextAnchor.LowerCenter;
+            tm.alignment = TextAlignment.Center;
+            tm.fontStyle = FontStyle.Bold;
+            tm.color = new Color(1f, 0.9f, 0.45f, 1f);
+            var mr = lblGo.GetComponent<MeshRenderer>();
+            if (mr != null) mr.sortingOrder = 42;
 
             ek.hpBar = bar.transform;
             ek.hpFill = fsr;
-            ek.hpBarWidth = 1.5f;
+            ek.hpBarWidth = 1.7f;
             ek.InitConfig();
             bar.SetActive(true);
 
-            // Reja que bloquea el camino hasta derrotar al Mini-Jefe
-            Gate gate = SpawnBlockingDoor(a, "RejaMiniJefe_" + title, gateX, y, false,
-                "¡Paso bloqueado! Derrota al Mini-Jefe (" + title + ") para abrir la reja");
+            Gate gate = SpawnBlockingDoor(a, "PuertaMiniJefe_" + title, gateX, y, false,
+                "¡Puerta cerrada! Derrota al Mini-Jefe (" + title + ") para abrir el paso");
 
             var guard = root.AddComponent<MiniBossGuard>();
             guard.knight = ek;
             guard.blockingGate = gate;
             guard.miniBossTitle = title;
             guard.bonusCoins = coinReward;
-        }
-
-        void SpawnLevel1EndBoss(GameSession gs, Assets a)
-        {
-            if (FindAnyObjectByType<BossKnight>() != null) return;
-            var tmpl = FindTemplateKnight();
-            if (tmpl == null) return;
-
-            // Despejar pinchos o soldados normales dentro de la arena del jefe (x = 719..766)
-            var hazards = FindObjectsByType<Hazard>(FindObjectsInactive.Include);
-            for (int i = 0; i < hazards.Length; i++)
-            {
-                if (hazards[i] != null && hazards[i].transform.position.x > 720f && hazards[i].transform.position.x < 766f)
-                    hazards[i].gameObject.SetActive(false);
-            }
-            var knights = FindObjectsByType<EnemyKnight>(FindObjectsInactive.Include);
-            for (int i = 0; i < knights.Length; i++)
-            {
-                if (knights[i] != null && knights[i].transform.position.x > 722f && knights[i].transform.position.x < 766f)
-                    knights[i].gameObject.SetActive(false);
-            }
-
-            var cfg = ScriptableObject.CreateInstance<EnemyConfig>();
-            cfg.displayName = "Comandante realista";
-            cfg.tier = EnemyTier.MuyResistente;
-            cfg.skin = tmpl.config != null ? tmpl.config.skin : 2;
-            cfg.tint = new Color(1f, 0.82f, 0.65f, 1f);
-            cfg.scale = 1.44f;
-            cfg.isBoss = true;
-            cfg.hitsToKill = 11;
-            cfg.heartsDamage = 2;
-            cfg.patrolSpeed = 1.5f;
-            cfg.chaseSpeed = 3.0f;
-            cfg.aggroRange = 12f;
-            cfg.loseRange = 20f;
-            cfg.attackRange = 2.5f;
-            cfg.attackCooldown = 1.8f;
-            cfg.staggerChance = 0f;
-            cfg.hitBoxSize = new Vector2(2.5f, 1.6f);
-            cfg.hitBoxOffset = new Vector2(1.5f, 1.0f);
-            cfg.colliderWidth = 1.1f;
-            cfg.colliderHeight = 2.0f;
-            cfg.coinReward = 40;
-            cfg.scoreValue = 650;
-
-            var root = new GameObject("Jefe_ComandanteNivel1");
-            root.layer = a.enemyLayer;
-            root.transform.SetParent(transform);
-            root.transform.position = new Vector3(748f, 0.05f, 0f);
-            var rb = root.AddComponent<Rigidbody2D>();
-            rb.mass = 6f;
-            var bc = root.AddComponent<BoxCollider2D>();
-
-            var vis = new GameObject("Visual");
-            vis.transform.SetParent(root.transform, false);
-            var sr = vis.AddComponent<SpriteRenderer>();
-            sr.sortingOrder = 10;
-            if (a.litMat != null) sr.sharedMaterial = a.litMat;
-            var an = vis.AddComponent<FrameAnimator>();
-            an.target = sr;
-
-            Gate leftGate = SpawnBlockingDoor(a, "RejaArenaIzq_N1", 720f, 0f, true, "");
-            Gate rightGate = SpawnBlockingDoor(a, "RejaSalidaJefe_N1", 764f, 0f, false,
-                "¡Derrota al Comandante realista para abrir la salida del pueblo!");
-
-            var boss = root.AddComponent<BossKnight>();
-            boss.config = cfg;
-            boss.bossName = "Comandante realista";
-            boss.visual = sr;
-            boss.animator = an;
-            boss.idle = tmpl.idle;
-            boss.run = tmpl.run;
-            boss.attack = tmpl.attack;
-            boss.hurt = tmpl.hurt;
-            boss.die = tmpl.die;
-            boss.waveSprite = gs.dustSprite != null ? gs.dustSprite : a.glow;
-            boss.coinReward = 45;
-            boss.finalBoss = false;
-            boss.arenaGates = new Gate[] { leftGate };
-            boss.rewardGate = rightGate;
-            boss.InitConfig();
-
-            var trig = new GameObject("ArenaDelJefe_Nivel1");
-            trig.transform.SetParent(transform);
-            trig.transform.position = new Vector3(726f, 4f, 0f);
-            var tbc = trig.AddComponent<BoxCollider2D>();
-            tbc.isTrigger = true;
-            tbc.size = new Vector2(6f, 14f);
-            trig.AddComponent<BossArenaTrigger>().boss = boss;
         }
     }
 }

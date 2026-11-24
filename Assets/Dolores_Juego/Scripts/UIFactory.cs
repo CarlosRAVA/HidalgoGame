@@ -155,9 +155,9 @@ namespace Dolores1810
             b.targetGraphic = img;
             var cb = b.colors;
             cb.normalColor = Color.white;
-            cb.highlightedColor = new Color(1f, 0.92f, 0.72f, 1f);
-            cb.selectedColor = new Color(1f, 0.88f, 0.55f, 1f);
-            cb.pressedColor = new Color(0.78f, 0.68f, 0.58f, 1f);
+            cb.highlightedColor = new Color(0.68f, 0.52f, 0.38f, 1f);
+            cb.selectedColor = new Color(0.58f, 0.42f, 0.28f, 1f);
+            cb.pressedColor = new Color(0.45f, 0.32f, 0.20f, 1f);
             cb.disabledColor = new Color(0.45f, 0.42f, 0.4f, 0.8f);
             cb.fadeDuration = 0.08f;
             b.colors = cb;

@@ -48,9 +48,9 @@ namespace Dolores1810.EditorTools
                 if (!Directory.Exists(Path.Combine(Application.dataPath, "Scenes"))) Directory.CreateDirectory(Path.Combine(Application.dataPath, "Scenes"));
                 if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Construyendo el menú principal...", 0.4f);
                 BuildMenuScene();
-                for (int i = 1; i <= 3; i++)
+                for (int i = 1; i <= 4; i++)
                 {
-                    if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Construyendo el nivel " + i + "...", 0.45f + i * 0.15f);
+                    if (!Application.isBatchMode) EditorUtility.DisplayProgressBar("1810", "Construyendo el nivel " + i + "...", 0.40f + i * 0.12f);
                     BuildLevel(i);
                 }
                 SetBuildSettings();
@@ -97,7 +97,7 @@ namespace Dolores1810.EditorTools
         static void BackupScenes()
         {
             string dir = ScenesDir + "/Respaldo_Anterior";
-            string[] names = { "MainMenu", "Level1", "Level2", "Level3" };
+            string[] names = { "MainMenu", "Level1", "Level2", "Level3", "Level4" };
             foreach (string n in names)
             {
                 string src = ScenesDir + "/" + n + ".unity";
@@ -336,7 +336,7 @@ namespace Dolores1810.EditorTools
 
         static void SetBuildSettings()
         {
-            string[] names = { "MainMenu", "Level1", "Level2", "Level3" };
+            string[] names = { "MainMenu", "Level1", "Level2", "Level3", "Level4" };
             var list = new List<EditorBuildSettingsScene>();
             var used = new HashSet<string>();
             foreach (string n in names)

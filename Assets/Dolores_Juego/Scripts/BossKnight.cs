@@ -36,8 +36,108 @@ namespace Dolores1810
         Color baseColor = Color.white;
         Vector3 startPos;
 
+        Transform overheadRoot;
+        SpriteRenderer overheadFill;
+        TextMesh overheadLabel;
+        static Sprite sharedBarSprite;
+        const float OverheadBarWidth = 2.4f;
+
         public bool Active { get { return state != BState.Dormant && state != BState.Dead; } }
         public bool IsDead { get { return state == BState.Dead; } }
+
+        static Sprite GetBarSprite()
+        {
+            if (sharedBarSprite != null) return sharedBarSprite;
+            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+            var cols = new Color[16 * 16];
+            for (int i = 0; i < cols.Length; i++) cols[i] = Color.white;
+            tex.SetPixels(cols);
+            tex.Apply();
+            sharedBarSprite = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0f, 0.5f), 16f);
+            return sharedBarSprite;
+        }
+
+        void EnsureOverheadBar()
+        {
+            if (overheadRoot == null)
+            {
+                var ex = transform.Find("BarraVidaJefe");
+                if (ex != null) overheadRoot = ex;
+            }
+            if (overheadRoot == null)
+            {
+                var rootGo = new GameObject("BarraVidaJefe");
+                rootGo.transform.SetParent(transform, false);
+                overheadRoot = rootGo.transform;
+
+                Sprite sp = GetBarSprite();
+                Material unlit = (GameSession.I != null && GameSession.I.unlitMaterial != null) ? GameSession.I.unlitMaterial : null;
+
+                var borderGo = new GameObject("Borde");
+                borderGo.transform.SetParent(overheadRoot, false);
+                borderGo.transform.localPosition = new Vector3(-OverheadBarWidth * 0.5f - 0.06f, 0f, 0f);
+                borderGo.transform.localScale = new Vector3(OverheadBarWidth + 0.12f, 0.34f, 1f);
+                var bsr = borderGo.AddComponent<SpriteRenderer>();
+                bsr.sprite = sp;
+                bsr.color = new Color(0.95f, 0.76f, 0.25f, 0.96f);
+                bsr.sortingOrder = 44;
+                if (unlit != null) bsr.sharedMaterial = unlit;
+
+                var backGo = new GameObject("Fondo");
+                backGo.transform.SetParent(overheadRoot, false);
+                backGo.transform.localPosition = new Vector3(-OverheadBarWidth * 0.5f - 0.03f, 0f, 0f);
+                backGo.transform.localScale = new Vector3(OverheadBarWidth + 0.06f, 0.28f, 1f);
+                var ksr = backGo.AddComponent<SpriteRenderer>();
+                ksr.sprite = sp;
+                ksr.color = new Color(0.08f, 0.03f, 0.03f, 0.96f);
+                ksr.sortingOrder = 45;
+                if (unlit != null) ksr.sharedMaterial = unlit;
+
+                var fillGo = new GameObject("Vida");
+                fillGo.transform.SetParent(overheadRoot, false);
+                fillGo.transform.localPosition = new Vector3(-OverheadBarWidth * 0.5f, 0f, 0f);
+                fillGo.transform.localScale = new Vector3(OverheadBarWidth, 0.22f, 1f);
+                overheadFill = fillGo.AddComponent<SpriteRenderer>();
+                overheadFill.sprite = sp;
+                overheadFill.color = new Color(0.92f, 0.18f, 0.15f, 1f);
+                overheadFill.sortingOrder = 46;
+                if (unlit != null) overheadFill.sharedMaterial = unlit;
+
+                var lblGo = new GameObject("NombreJefe");
+                lblGo.transform.SetParent(overheadRoot, false);
+                lblGo.transform.localPosition = new Vector3(0f, 0.22f, 0f);
+                overheadLabel = lblGo.AddComponent<TextMesh>();
+                overheadLabel.characterSize = 0.11f;
+                overheadLabel.fontSize = 42;
+                overheadLabel.anchor = TextAnchor.LowerCenter;
+                overheadLabel.alignment = TextAlignment.Center;
+                overheadLabel.fontStyle = FontStyle.Bold;
+                overheadLabel.color = new Color(1f, 0.9f, 0.48f, 1f);
+                var mr = lblGo.GetComponent<MeshRenderer>();
+                if (mr != null) mr.sortingOrder = 47;
+            }
+            UpdateOverheadBar();
+        }
+
+        public void UpdateOverheadBar()
+        {
+            if (overheadRoot == null) return;
+            float headY = (config != null ? config.colliderHeight * config.scale : 2.8f) + 0.7f;
+            overheadRoot.localPosition = new Vector3(0f, headY, 0f);
+            overheadRoot.gameObject.SetActive(state != BState.Dead);
+            if (overheadFill != null)
+            {
+                float k = maxHp > 0 ? Mathf.Clamp01((float)hp / maxHp) : 0f;
+                overheadFill.transform.localScale = new Vector3(OverheadBarWidth * k, 0.22f, 1f);
+                overheadFill.color = enraged
+                    ? new Color(1f, 0.42f, 0.12f, 1f)
+                    : new Color(0.92f, 0.18f, 0.15f, 1f);
+            }
+            if (overheadLabel != null)
+            {
+                overheadLabel.text = bossName + " (" + Mathf.Max(0, hp) + "/" + maxHp + ")";
+            }
+        }
 
         void Awake()
         {
@@ -72,6 +172,7 @@ namespace Dolores1810
             else if (maxHp <= 0) maxHp = 150;
             hp = maxHp;
             if (visual != null) visual.color = baseColor;
+            EnsureOverheadBar();
         }
 
         void Start()
@@ -80,6 +181,18 @@ namespace Dolores1810
             startPos = transform.position;
             if (animator != null && idle != null) animator.Play(idle, true);
             SetFacing(-1);
+        }
+
+        public void Relocate(Vector3 pos)
+        {
+            startPos = pos;
+            transform.position = pos;
+            if (rb == null) rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.position = pos;
+                rb.SetVel(Vector2.zero);
+            }
         }
 
         void OnDestroy()
@@ -116,6 +229,7 @@ namespace Dolores1810
                 gs.Respawned += ResetFight;
             }
             MusicManager.Ensure().SetMood(Mood.Boss);
+            EnsureOverheadBar();
         }
 
         /// <summary>Si el jugador muere durante el combate, el jefe se reinicia y las rejas se abren para poder volver a entrar.</summary>
@@ -151,6 +265,7 @@ namespace Dolores1810
             }
             if (gs != null) gs.BossEnded();
             MusicManager.Ensure().SetMood(Mood.Explore);
+            UpdateOverheadBar();
         }
 
         void Update()
@@ -301,12 +416,14 @@ namespace Dolores1810
                 if (GameSession.I != null) GameSession.I.ShowToast("¡" + bossName + " se enfurece!");
             }
             if (hp <= 0) { Die(); return true; }
+            UpdateOverheadBar();
             return true;
         }
 
         void Die()
         {
             state = BState.Dead;
+            UpdateOverheadBar();
             CombatTracker.Remove();
             if (GameSession.I != null) GameSession.I.Respawned -= ResetFight;
             desiredVelX = 0f;

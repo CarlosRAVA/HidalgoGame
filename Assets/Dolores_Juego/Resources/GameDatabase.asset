@@ -51,7 +51,13 @@ MonoBehaviour:
     thumbnail: {fileID: 21300000, guid: 7fe84feaaed71b04ab67d4437e4f2bd5, type: 3}
   - index: 3
     sceneName: Level3
-    title: 'Nivel 3: El Grito de Independencia'
-    description: La gran plaza de Dolores. Derrota al coronel y toca la campana para dar el Grito.
-    introLine: La plaza espera. Ha llegado el momento.
+    title: 'Nivel 3: La Plaza de Armas'
+    description: Toma las calles iluminadas por faroles y derrota al Coronel realista para abrir paso hacia la Parroquia.
+    introLine: "La lucha llega al coraz\xF3n de Dolores."
+    thumbnail: {fileID: 21300000, guid: 82940feafa827af479582f08e02152c9, type: 3}
+  - index: 4
+    sceneName: Level4
+    title: 'Nivel 4: El Grito de Independencia'
+    description: El asalto final hacia la Parroquia de Dolores. Derrota al General Realista y haz sonar la campana.
+    introLine: La Parroquia espera. Ha llegado el momento de la libertad.
     thumbnail: {fileID: 21300000, guid: 82940feafa827af479582f08e02152c9, type: 3}

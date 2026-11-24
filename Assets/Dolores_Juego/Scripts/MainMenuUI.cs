@@ -26,7 +26,7 @@ namespace Dolores1810
         bool loading;
 
         class Card { public Button button; public Image shade, lockIcon; public Text status; public int level; }
-        readonly Card[] cards = new Card[3];
+        readonly Card[] cards = new Card[4];
 
         void Awake()
         {
@@ -140,27 +140,27 @@ namespace Dolores1810
             UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 385f), new Vector2(1400f, 100f));
 
             var db = GameDatabase.I;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 int lv = i + 1;
-                float x = -580f + i * 580f;
+                float x = -622.5f + i * 415f;
                 var info = db != null ? db.GetLevel(lv) : null;
-                var cardBack = UIFactory.Box(t, "Tarjeta" + lv, new Color(0.3f, 0.18f, 0.08f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(520f, 640f));
-                UIFactory.PlaceCenter(cardBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 20f), new Vector2(520f, 640f));
-                var thumb = UIFactory.Icon(t, "Miniatura" + lv, info != null ? info.thumbnail : null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(480f, 270f));
-                UIFactory.PlaceCenter(thumb.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(480f, 270f));
+                var cardBack = UIFactory.Box(t, "Tarjeta" + lv, new Color(0.3f, 0.18f, 0.08f, 0.18f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(395f, 640f));
+                UIFactory.PlaceCenter(cardBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 20f), new Vector2(395f, 640f));
+                var thumb = UIFactory.Icon(t, "Miniatura" + lv, info != null ? info.thumbnail : null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 210f));
+                UIFactory.PlaceCenter(thumb.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(360f, 210f));
                 thumb.preserveAspect = false;
-                var shade = UIFactory.Box(t, "Sombra" + lv, new Color(0f, 0f, 0f, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(480f, 270f));
-                UIFactory.PlaceCenter(shade.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(480f, 270f));
-                var lockI = UIFactory.Icon(t, "Candado" + lv, lockSprite, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(120f, 120f));
-                UIFactory.PlaceCenter(lockI.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(120f, 120f));
-                var nm = UIFactory.Label(t, "Nombre" + lv, info != null ? info.title : "Nivel " + lv, 36, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-                UIFactory.PlaceCenter(nm.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 60f), new Vector2(500f, 90f));
-                var ds = UIFactory.Label(t, "Descripcion" + lv, info != null ? info.description : "", 28, UIFactory.Ink, TextAnchor.UpperCenter, FontStyle.Normal, false);
-                UIFactory.PlaceCenter(ds.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -70f), new Vector2(480f, 160f));
-                var st = UIFactory.Label(t, "Estado" + lv, "", 30, new Color(0.45f, 0.25f, 0.05f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
-                UIFactory.PlaceCenter(st.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -170f), new Vector2(500f, 50f));
-                var btn = UIFactory.MakeButton(t, "Comenzar", new Vector2(x, -250f), new Vector2(380f, 80f), () => StartLevel(lv));
+                var shade = UIFactory.Box(t, "Sombra" + lv, new Color(0f, 0f, 0f, 0.6f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(360f, 210f));
+                UIFactory.PlaceCenter(shade.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(360f, 210f));
+                var lockI = UIFactory.Icon(t, "Candado" + lv, lockSprite, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(105f, 105f));
+                UIFactory.PlaceCenter(lockI.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(105f, 105f));
+                var nm = UIFactory.Label(t, "Nombre" + lv, info != null ? info.title : "Nivel " + lv, 30, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(nm.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 72f), new Vector2(372f, 84f));
+                var ds = UIFactory.Label(t, "Descripcion" + lv, info != null ? info.description : "", 23, UIFactory.Ink, TextAnchor.UpperCenter, FontStyle.Normal, false);
+                UIFactory.PlaceCenter(ds.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -60f), new Vector2(366f, 165f));
+                var st = UIFactory.Label(t, "Estado" + lv, "", 24, new Color(0.45f, 0.25f, 0.05f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(st.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -170f), new Vector2(372f, 48f));
+                var btn = UIFactory.MakeButton(t, "Comenzar", new Vector2(x, -250f), new Vector2(330f, 76f), () => StartLevel(lv));
                 var c = new Card(); c.button = btn; c.shade = shade; c.lockIcon = lockI; c.status = st; c.level = lv;
                 cards[i] = c;
             }

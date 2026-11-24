@@ -637,16 +637,14 @@ namespace Dolores1810
         {
             bossName.text = name;
             UIFactory.SetBar(bossFill, 1f);
-            bossShown = true;
         }
-        bool bossShown;
 
         void OnBossHealth(int cur, int max)
         {
             UIFactory.SetBar(bossFill, max > 0 ? (float)cur / max : 0f);
         }
 
-        void OnBossEnd() { bossShown = false; }
+        void OnBossEnd() { }
 
         void OnIntro(string title, string subtitle)
         {
@@ -716,7 +714,7 @@ namespace Dolores1810
                 float targetHudMissions = playing && hasMissions ? (zoneTimer > 0f ? 0.35f : 1f) : 0f;
                 hudMissionsGroup.alpha = Mathf.MoveTowards(hudMissionsGroup.alpha, targetHudMissions, dt * 3f);
             }
-            bossGroup.alpha = Mathf.MoveTowards(bossGroup.alpha, bossShown && playing ? 1f : 0f, dt * 3f);
+            bossGroup.alpha = 0f;
 
             if (introActive || exitShown)
             {

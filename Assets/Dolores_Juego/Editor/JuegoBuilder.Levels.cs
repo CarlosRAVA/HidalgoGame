@@ -313,12 +313,23 @@ namespace Dolores1810.EditorTools
                 { "870", "LA CAMPANA", "Es el momento", "Toca la campana de Dolores" } });
 
             var m = new LevelMeta();
-            m.title = "NIVEL 3: EL GRITO DE INDEPENDENCIA"; m.subtitle = "El día termina. La plaza de Dolores espera la campana.";
-            m.objective = "Cruza la plaza hacia la parroquia";
+            m.title = "NIVEL 3: LA PLAZA DE ARMAS"; m.subtitle = "La lucha llega al corazón de Dolores. Derrota al Coronel realista.";
+            m.objective = "Cruza la Plaza de Armas";
             m.missions = new Mission[] {
                 M("cajas", "Rompe 14 cajas o barriles", MissionKind.Break, 14, 80), M("soldados", "Derrota 22 soldados", MissionKind.Kills, 22, 100),
                 M("cofres", "Abre 3 cofres", MissionKind.Chests, 3, 100), M("pergaminos", "Encuentra 3 pergaminos históricos", MissionKind.Collect, 3, 100) };
-            m.todStart = 0f; m.todEnd = 1f; m.explore = A("music_festive.ogg"); m.isFinal = true;
+            m.todStart = 0f; m.todEnd = 1f; m.explore = A("music_festive.ogg"); m.isFinal = false;
+            return m;
+        }
+
+        // ================================================================== NIVEL 4: EL GRITO DE INDEPENDENCIA
+        static LevelMeta Level4()
+        {
+            var m = Level3();
+            m.title = "NIVEL 4: EL GRITO DE INDEPENDENCIA";
+            m.subtitle = "El asalto final hacia la Parroquia de Dolores. Derrota al General Realista.";
+            m.objective = "Avanza hacia la Parroquia de Dolores";
+            m.isFinal = true;
             return m;
         }
 

@@ -17,6 +17,7 @@ namespace Dolores1810
             public Button button;
             public Text nameText, subText, stateText;
             public Image icon, back, stateBadge;
+            public GameObject selectBorder;
         }
 
         readonly List<Entry> entries = new List<Entry>();
@@ -105,6 +106,22 @@ namespace Dolores1810
             e.weapon = w;
             e.button = b;
             e.back = b.GetComponent<Image>();
+
+            var cb = b.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(0.58f, 0.42f, 0.28f, 1f);
+            cb.selectedColor = new Color(0.50f, 0.35f, 0.22f, 1f);
+            cb.pressedColor = new Color(0.38f, 0.25f, 0.15f, 1f);
+            b.colors = cb;
+
+            var selRoot = UIFactory.Rect("BordeSeleccion", b.transform);
+            UIFactory.Stretch(selRoot);
+            UIFactory.Box(selRoot, "Arriba", UIFactory.Gold, new Vector2(0f, 1f), Vector2.zero, new Vector2(760f, 3.5f));
+            UIFactory.Box(selRoot, "Abajo", UIFactory.Gold, new Vector2(0f, 0f), Vector2.zero, new Vector2(760f, 3.5f));
+            UIFactory.Box(selRoot, "Izq", UIFactory.Gold, new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 104f));
+            UIFactory.Box(selRoot, "Der", UIFactory.Gold, new Vector2(1f, 0f), Vector2.zero, new Vector2(6f, 104f));
+            e.selectBorder = selRoot.gameObject;
+            e.selectBorder.SetActive(false);
 
             var iconFrame = UIFactory.Box(b.transform, "IconoFondo", new Color(0.16f, 0.08f, 0.04f, 0.88f), new Vector2(0f, 0.5f), Vector2.zero, new Vector2(82f, 82f));
             UIFactory.PlaceCenter(iconFrame.rectTransform, new Vector2(0f, 0.5f), new Vector2(56f, 0f), new Vector2(82f, 82f));
@@ -221,6 +238,16 @@ namespace Dolores1810
         {
             if (index < 0 || index >= entries.Count) return;
             selected = index;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                bool isSel = (i == selected);
+                if (entries[i].back != null)
+                    entries[i].back.color = isSel ? new Color(0.45f, 0.28f, 0.16f, 1f) : Color.white;
+                if (entries[i].selectBorder != null)
+                    entries[i].selectBorder.SetActive(isSel);
+                if (entries[i].stateBadge != null)
+                    entries[i].stateBadge.color = isSel ? new Color(0.10f, 0.05f, 0.02f, 0.96f) : new Color(0.16f, 0.08f, 0.03f, 0.9f);
+            }
             var e = entries[index];
             if (detailIcon != null)
             {

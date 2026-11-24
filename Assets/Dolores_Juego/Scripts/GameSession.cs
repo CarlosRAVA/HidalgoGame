@@ -96,7 +96,7 @@ namespace Dolores1810
         float autosave;
         bool exiting;
 
-        public bool IsLastLevel { get { return levelIndex >= 3; } }
+        public bool IsLastLevel { get { return levelIndex >= 4; } }
 
         void Awake()
         {
@@ -105,6 +105,20 @@ namespace Dolores1810
             AudioListener.pause = false;
             State = GameState.Playing;
             CheckpointIndex = -1;
+            string activeScene = SceneManager.GetActiveScene().name;
+            if (activeScene == "Level4")
+            {
+                levelIndex = 4;
+                levelTitle = "NIVEL 4: EL GRITO DE INDEPENDENCIA";
+                levelSubtitle = "El asalto final hacia la Parroquia de Dolores. Derrota al General Realista.";
+                startObjective = "Avanza hacia la Parroquia de Dolores";
+            }
+            else if (activeScene == "Level3" && levelIndex == 3)
+            {
+                levelTitle = "NIVEL 3: LA PLAZA DE ARMAS";
+                levelSubtitle = "La lucha llega al corazón de Dolores. Derrota al Coronel realista.";
+                startObjective = "Cruza la Plaza de Armas";
+            }
             Fx.Spark = sparkSprite;
             Fx.Dust = dustSprite;
             Fx.Confetti = confettiSprite;
