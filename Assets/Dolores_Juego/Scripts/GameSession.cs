@@ -68,6 +68,7 @@ namespace Dolores1810
         public int Score { get; private set; }
         public int CoinsThisLevel { get; private set; }
         public int Kills { get; private set; }
+        public int BreaksThisLevel { get; private set; }
         public float Elapsed { get; private set; }
         public int CheckpointIndex { get; private set; }
         public string Objective { get; private set; }
@@ -187,6 +188,11 @@ namespace Dolores1810
         {
             State = GameState.Cinematic;
             if (player != null) player.BlockInput(0.1f);
+            if (levelIndex == 1)
+            {
+                if (StateChanged != null) StateChanged();
+                yield return IntroStoryCinematic.Play(this);
+            }
             if (IntroShown != null) IntroShown(levelTitle, levelSubtitle);
             if (StateChanged != null) StateChanged();
             float t = 0f;
@@ -239,7 +245,16 @@ namespace Dolores1810
         }
 
         // ------------------------------------------------------------------ estadísticas
-        public void RaiseStats() { if (StatsChanged != null) StatsChanged(); }
+        public void SyncLevelStats()
+        {
+            PlayerProgress.RecordLevelStats(levelIndex, Kills, CoinsThisLevel, Score, Elapsed, BreaksThisLevel, MissionsDoneCount());
+        }
+
+        public void RaiseStats()
+        {
+            SyncLevelStats();
+            if (StatsChanged != null) StatsChanged();
+        }
 
         public void AddScore(int amount) { Score += amount; RaiseStats(); }
 
@@ -322,7 +337,7 @@ namespace Dolores1810
             RaiseStats();
         }
 
-        public void NotifyBreak() { Progress(MissionKind.Break); }
+        public void NotifyBreak() { BreaksThisLevel++; Progress(MissionKind.Break); }
         public void NotifyChest(bool hidden) { Progress(MissionKind.Chests); }
         public void NotifyCollectible() { Progress(MissionKind.Collect); }
         public void NotifySecret() { RaiseStats(); }
@@ -415,6 +430,7 @@ namespace Dolores1810
             if (ExitShown != null) ExitShown(text);
             float t = 0f;
             while (t < 3.4f) { t += Time.unscaledDeltaTime; yield return null; }
+            SyncLevelStats();
             PlayerProgress.SetSavedLives(Mathf.Max(1, Lives));
             PlayerProgress.CompleteLevel(levelIndex);
             LoadScene(nextScene);
@@ -437,24 +453,27 @@ namespace Dolores1810
             MusicManager.Ensure().SetMood(Mood.Final);
             AudioHub.Play(SfxId.Bell, 0f);
             if (cam != null) cam.FocusOn(bell, 3.3f);
-            ShowToast("¡La campana de Dolores ha sonado!", 5f);
+            ShowToast("¡La campana de Dolores ha sonado!", 3.6f);
             float t = 0f;
-            float nextFw = 0.6f;
-            while (t < 8.5f)
+            float nextFw = 0.45f;
+            while (t < 3.8f)
             {
                 t += Time.unscaledDeltaTime;
                 if (t > nextFw)
                 {
-                    nextFw += Random.Range(0.35f, 0.8f);
+                    nextFw += Random.Range(0.35f, 0.75f);
                     Vector3 c = bell.position + new Vector3(Random.Range(-8f, 8f), Random.Range(2.5f, 6f), 0f);
                     Fx.Firework(c);
                     AudioHub.Play(SfxId.Firework, 0.1f, 0.7f);
-                    if (Random.value < 0.4f) Fx.ConfettiBurst(c, 14);
+                    if (Random.value < 0.45f) Fx.ConfettiBurst(c, 14);
                 }
                 yield return null;
             }
+            SyncLevelStats();
             PlayerProgress.CompleteLevel(levelIndex);
             PlayerProgress.SaveNow();
+            yield return IntroStoryCinematic.PlayEnding(this);
+            if (cam != null && bell != null) cam.FocusOn(bell, 3.3f);
             State = GameState.Victory;
             if (StateChanged != null) StateChanged();
         }

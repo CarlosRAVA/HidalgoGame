@@ -73,10 +73,10 @@ namespace Dolores1810
 
             var year = UIFactory.Label(m, "Anio", "1810", 230, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Normal, true, titleFont);
             UIFactory.PlaceCenter(year.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(1400f, 250f));
-            var title = UIFactory.Label(m, "Titulo", "EL GRITO DE LA LIBERTAD", 90, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal, true, titleFont);
+            var title = UIFactory.Label(m, "Titulo", "EL GRITO DE LA LIBERTAD", 92, Color.white, TextAnchor.MiddleCenter, FontStyle.Normal, true, titleFont);
             UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -300f), new Vector2(1700f, 110f));
-            var sub = UIFactory.Label(m, "Sub", "Dolores, Guanajuato · México, 1810", 36, UIFactory.Cream, TextAnchor.MiddleCenter, FontStyle.Bold);
-            UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -380f), new Vector2(1700f, 50f));
+            var sub = UIFactory.Label(m, "Sub", "Dolores, Guanajuato · México, 1810", 42, UIFactory.Cream, TextAnchor.MiddleCenter, FontStyle.Bold);
+            UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -380f), new Vector2(1700f, 54f));
 
             Vector2 sz = new Vector2(540f, 70f);
             playButton = UIFactory.MakeButton(m, "Jugar", new Vector2(0f, 100f), sz, () => { PlayerProgress.SetSavedLives(3); StartLevel(1); });
@@ -113,7 +113,7 @@ namespace Dolores1810
             if (ctrlTxt != null)
             {
                 var tComp = ctrlTxt.GetComponent<Text>();
-                if (tComp != null) tComp.fontSize = 28;
+                if (tComp != null) tComp.fontSize = 31;
             }
             creditsPanel = BuildInfoPanel(root, "Creditos", "CRÉDITOS",
                 "<b>1810: El Grito de la Libertad</b>\nJuego de plataformas en Unity.\n\n" +
@@ -154,12 +154,12 @@ namespace Dolores1810
                 UIFactory.PlaceCenter(shade.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(360f, 210f));
                 var lockI = UIFactory.Icon(t, "Candado" + lv, lockSprite, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(105f, 105f));
                 UIFactory.PlaceCenter(lockI.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 235f), new Vector2(105f, 105f));
-                var nm = UIFactory.Label(t, "Nombre" + lv, info != null ? info.title : "Nivel " + lv, 30, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-                UIFactory.PlaceCenter(nm.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 72f), new Vector2(372f, 84f));
-                var ds = UIFactory.Label(t, "Descripcion" + lv, info != null ? info.description : "", 23, UIFactory.Ink, TextAnchor.UpperCenter, FontStyle.Normal, false);
-                UIFactory.PlaceCenter(ds.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -60f), new Vector2(366f, 165f));
-                var st = UIFactory.Label(t, "Estado" + lv, "", 24, new Color(0.45f, 0.25f, 0.05f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
-                UIFactory.PlaceCenter(st.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -170f), new Vector2(372f, 48f));
+                var nm = UIFactory.Label(t, "Nombre" + lv, info != null ? info.title : "Nivel " + lv, 33, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(nm.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, 72f), new Vector2(376f, 86f));
+                var ds = UIFactory.Label(t, "Descripcion" + lv, info != null ? info.description : "", 26, UIFactory.Ink, TextAnchor.UpperCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(ds.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -58f), new Vector2(372f, 170f));
+                var st = UIFactory.Label(t, "Estado" + lv, "", 27, new Color(0.45f, 0.25f, 0.05f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(st.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(x, -170f), new Vector2(376f, 50f));
                 var btn = UIFactory.MakeButton(t, "Comenzar", new Vector2(x, -250f), new Vector2(330f, 76f), () => StartLevel(lv));
                 var c = new Card(); c.button = btn; c.shade = shade; c.lockIcon = lockI; c.status = st; c.level = lv;
                 cards[i] = c;
@@ -170,14 +170,14 @@ namespace Dolores1810
 
         void BuildControlsCard(Transform parent)
         {
-            var card = UIFactory.Box(parent, "ControlesResumen", new Color(0.14f, 0.08f, 0.04f, 0.88f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(560f, 500f));
-            UIFactory.PlaceCenter(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-620f, -170f), new Vector2(560f, 500f));
-            UIFactory.Box(card.transform, "BordeSup", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 1f), Vector2.zero, new Vector2(560f, 3f));
-            UIFactory.Box(card.transform, "BordeIzq", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 0f), Vector2.zero, new Vector2(5f, 500f));
+            var card = UIFactory.Box(parent, "ControlesResumen", new Color(0.14f, 0.08f, 0.04f, 0.90f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(600f, 520f));
+            UIFactory.PlaceCenter(card.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-620f, -170f), new Vector2(600f, 520f));
+            UIFactory.Box(card.transform, "BordeSup", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 1f), Vector2.zero, new Vector2(600f, 3f));
+            UIFactory.Box(card.transform, "BordeIzq", new Color(0.92f, 0.72f, 0.24f, 0.9f), new Vector2(0f, 0f), Vector2.zero, new Vector2(5f, 520f));
 
-            var hdr = UIFactory.Label(card.transform, "Titulo", "CONTROLES", 32, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.Place(hdr.rectTransform, new Vector2(0f, 1f), new Vector2(16f, -12f), new Vector2(528f, 44f));
-            UIFactory.Box(card.transform, "Linea", new Color(0.92f, 0.72f, 0.24f, 0.5f), new Vector2(0f, 1f), new Vector2(20f, -60f), new Vector2(520f, 2f));
+            var hdr = UIFactory.Label(card.transform, "Titulo", "CONTROLES", 36, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.Place(hdr.rectTransform, new Vector2(0f, 1f), new Vector2(16f, -12f), new Vector2(568f, 46f));
+            UIFactory.Box(card.transform, "Linea", new Color(0.92f, 0.72f, 0.24f, 0.5f), new Vector2(0f, 1f), new Vector2(20f, -62f), new Vector2(560f, 2f));
 
             string[] lines =
             {
@@ -192,8 +192,8 @@ namespace Dolores1810
             };
             for (int i = 0; i < lines.Length; i++)
             {
-                var row = UIFactory.Label(card.transform, "Ctrl_" + i, lines[i], 23, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Normal, false);
-                UIFactory.Place(row.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -74f - i * 51f), new Vector2(516f, 44f));
+                var row = UIFactory.Label(card.transform, "Ctrl_" + i, lines[i], 26, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+                UIFactory.Place(row.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -74f - i * 53f), new Vector2(556f, 46f));
             }
         }
 

@@ -16,8 +16,7 @@ namespace Dolores1810
         {
             baseY = transform.position.y;
             t = Random.value * 6f;
-            if (PlayerProgress.IsCollected(collectibleId)) taken = true;
-            if (taken) gameObject.SetActive(false);
+            taken = false;
         }
 
         void Update()
@@ -34,10 +33,11 @@ namespace Dolores1810
             var p = other.GetComponentInParent<PlatformerPlayer>();
             if (p == null || p.IsDead) return;
             taken = true;
-            PlayerProgress.MarkCollected(collectibleId);
+            var gs = GameSession.I;
+            string saveKey = (gs != null ? ("L" + gs.levelIndex + "_") : "") + collectibleId;
+            PlayerProgress.MarkCollected(saveKey);
             AudioHub.Play(SfxId.Secret, 0f);
             Fx.Sparkle(transform.position, new Color(1f, 0.95f, 0.6f, 1f));
-            var gs = GameSession.I;
             if (gs != null)
             {
                 gs.AddCoins(coins);

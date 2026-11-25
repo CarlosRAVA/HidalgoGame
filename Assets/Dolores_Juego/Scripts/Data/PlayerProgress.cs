@@ -113,6 +113,121 @@ namespace Dolores1810
         public static void MarkMissionDone(string id) { if (!Data.doneMissions.Contains(id)) { Data.doneMissions.Add(id); Touch(); } }
         public static void AddKills(int n) { Data.totalKills += n; dirty = true; }
 
+        /// <summary>Registra las estadísticas alcanzadas en un nivel (1..4) para la sumatoria final de toda la campaña.</summary>
+        public static void RecordLevelStats(int levelIndex, int kills, int coinsEarned, int score, float elapsed, int breaks, int missionsDone)
+        {
+            int idx = Mathf.Clamp(levelIndex - 1, 0, 3);
+            var d = Data;
+            if (d.levelKills == null || d.levelKills.Length != 4) d.levelKills = new int[4];
+            if (d.levelCoins == null || d.levelCoins.Length != 4) d.levelCoins = new int[4];
+            if (d.levelScores == null || d.levelScores.Length != 4) d.levelScores = new int[4];
+            if (d.levelTimes == null || d.levelTimes.Length != 4) d.levelTimes = new float[4];
+            if (d.levelBreaks == null || d.levelBreaks.Length != 4) d.levelBreaks = new int[4];
+            if (d.levelMissions == null || d.levelMissions.Length != 4) d.levelMissions = new int[4];
+
+            if (kills > d.levelKills[idx]) d.levelKills[idx] = kills;
+            if (coinsEarned > d.levelCoins[idx]) d.levelCoins[idx] = coinsEarned;
+            if (score > d.levelScores[idx]) d.levelScores[idx] = score;
+            if (elapsed > 0.1f) d.levelTimes[idx] = Mathf.Max(d.levelTimes[idx], elapsed);
+            if (breaks > d.levelBreaks[idx]) d.levelBreaks[idx] = breaks;
+            if (missionsDone > d.levelMissions[idx]) d.levelMissions[idx] = missionsDone;
+            dirty = true;
+        }
+
+        public static int GetTotalKillsAllLevels(int curLevel, int curKills)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(curLevel - 1, 0, 3);
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int v = (d.levelKills != null && i < d.levelKills.Length) ? d.levelKills[i] : 0;
+                if (i == idx) v = Mathf.Max(v, curKills);
+                sum += v;
+            }
+            return Mathf.Max(sum, d.totalKills);
+        }
+
+        public static int GetTotalCoinsAllLevels(int curLevel, int curCoins)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(curLevel - 1, 0, 3);
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int v = (d.levelCoins != null && i < d.levelCoins.Length) ? d.levelCoins[i] : 0;
+                if (i == idx) v = Mathf.Max(v, curCoins);
+                sum += v;
+            }
+            return Mathf.Max(sum, d.coins);
+        }
+
+        public static int GetTotalScoreAllLevels(int curLevel, int curScore)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(curLevel - 1, 0, 3);
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int v = (d.levelScores != null && i < d.levelScores.Length) ? d.levelScores[i] : 0;
+                if (i == idx) v = Mathf.Max(v, curScore);
+                sum += v;
+            }
+            return Mathf.Max(sum, curScore);
+        }
+
+        public static float GetTotalTimeAllLevels(int curLevel, float curTime)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(curLevel - 1, 0, 3);
+            float sum = 0f;
+            for (int i = 0; i < 4; i++)
+            {
+                float v = (d.levelTimes != null && i < d.levelTimes.Length) ? d.levelTimes[i] : 0f;
+                if (i == idx) v = Mathf.Max(v, curTime);
+                sum += v;
+            }
+            return Mathf.Max(sum, curTime);
+        }
+
+        public static int GetTotalBreaksAllLevels(int curLevel, int curBreaks)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(curLevel - 1, 0, 3);
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int v = (d.levelBreaks != null && i < d.levelBreaks.Length) ? d.levelBreaks[i] : 0;
+                if (i == idx) v = Mathf.Max(v, curBreaks);
+                sum += v;
+            }
+            return Mathf.Max(sum, curBreaks);
+        }
+
+        public static int GetTotalMissionsAllLevels(int curLevel, int curMissions)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(curLevel - 1, 0, 3);
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                int v = (d.levelMissions != null && i < d.levelMissions.Length) ? d.levelMissions[i] : 0;
+                if (i == idx) v = Mathf.Max(v, curMissions);
+                sum += v;
+            }
+            int globalDone = d.doneMissions != null ? d.doneMissions.Count : 0;
+            return Mathf.Max(sum, globalDone);
+        }
+
+        public static int GetLevelScore(int levelOneBased, int curLevel, int curScore)
+        {
+            var d = Data;
+            int idx = Mathf.Clamp(levelOneBased - 1, 0, 3);
+            int v = (d.levelScores != null && idx < d.levelScores.Length) ? d.levelScores[idx] : 0;
+            if (levelOneBased == curLevel) v = Mathf.Max(v, curScore);
+            return v;
+        }
+
         public static int SavedLives
         {
             get { return Data.savedLives > 0 ? Mathf.Clamp(Data.savedLives, 1, GameRules.MaxLives) : 3; }

@@ -19,13 +19,15 @@ namespace Dolores1810
         public static readonly Color Cream = new Color(1f, 0.95f, 0.8f, 1f);
         public static readonly Color Gold = new Color(1f, 0.82f, 0.32f, 1f);
 
+        static Font s_fallbackFont;
+
         public static Font GetFont()
         {
             if (Font != null) return Font;
-            Font f = null;
-            try { f = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { f = null; }
-            if (f == null) f = Font.CreateDynamicFontFromOSFont("Arial", 32);
-            return f;
+            if (s_fallbackFont != null) return s_fallbackFont;
+            try { s_fallbackFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); } catch { s_fallbackFont = null; }
+            if (s_fallbackFont == null) s_fallbackFont = Font.CreateDynamicFontFromOSFont("Arial", 16);
+            return s_fallbackFont;
         }
 
         public static Canvas CreateCanvas(string name, int sortOrder)
@@ -162,6 +164,7 @@ namespace Dolores1810
             cb.fadeDuration = 0.08f;
             b.colors = cb;
             var t = Label(rt, "Texto", label, 40, Cream, TextAnchor.MiddleCenter, FontStyle.Bold);
+            t.alignByGeometry = true;
             Stretch(t.rectTransform);
             rt.gameObject.AddComponent<UIButtonSounds>();
             b.onClick.AddListener(() => AudioHub.Play(SfxId.Click, 0f));
