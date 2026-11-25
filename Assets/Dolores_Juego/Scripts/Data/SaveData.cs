@@ -25,5 +25,13 @@ namespace Dolores1810
         public bool hasStarted;
         public int lastLevel = 1;
         public bool gameFinished;
+
+        // Estadísticas acumuladas por nivel (índices 0..3 corresponden a Niveles 1..4)
+        public int[] levelKills = new int[4];
+        public int[] levelCoins = new int[4];
+        public int[] levelScores = new int[4];
+        public float[] levelTimes = new float[4];
+        public int[] levelBreaks = new int[4];
+        public int[] levelMissions = new int[4];
     }
 }

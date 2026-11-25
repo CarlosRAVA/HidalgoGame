@@ -18,16 +18,17 @@ namespace Dolores1810
         public bool Available { get { return !opened; } }
         public bool HintOnly { get { return false; } }
 
-        void Awake() { sr = GetComponent<SpriteRenderer>(); }
+        void Awake()
+        {
+            sr = GetComponent<SpriteRenderer>();
+            opened = false;
+            if (sr != null && closedSprite != null) sr.sprite = closedSprite;
+        }
 
         void Start()
         {
-            if (PlayerProgress.IsChestOpened(chestId))
-            {
-                opened = true;
-                if (openSprite != null) sr.sprite = openSprite;
-            }
-            else if (closedSprite != null) sr.sprite = closedSprite;
+            opened = false;
+            if (sr != null && closedSprite != null) sr.sprite = closedSprite;
         }
 
         public void Interact(PlatformerPlayer player)
@@ -38,8 +39,9 @@ namespace Dolores1810
             AudioHub.Play(SfxId.ChestOpen, 0.02f);
             Fx.Sparkle(transform.position + Vector3.up * 0.6f, new Color(1f, 0.9f, 0.4f, 1f));
             Fx.Pickup(transform.position + Vector3.up * 0.8f);
-            PlayerProgress.MarkChestOpened(chestId);
             var gs = GameSession.I;
+            string saveKey = (gs != null ? ("L" + gs.levelIndex + "_") : "") + chestId + "_" + Mathf.RoundToInt(transform.position.x);
+            PlayerProgress.MarkChestOpened(saveKey);
             if (gs != null)
             {
                 gs.DropCoinsValue(transform.position + Vector3.up * 0.8f, coins, Mathf.Clamp(coins / 3, 3, 10));

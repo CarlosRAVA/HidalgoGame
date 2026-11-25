@@ -99,7 +99,8 @@ namespace Dolores1810
             d.staminaRecLevel = Mathf.Clamp(d.staminaRecLevel, 0, 3);
             d.speedLevel = Mathf.Clamp(d.speedLevel, 0, 3);
             d.attackLevel = Mathf.Clamp(d.attackLevel, 0, 3);
-            d.lastLevel = Mathf.Clamp(d.lastLevel, 1, 3);
+            d.shieldLevel = Mathf.Clamp(d.shieldLevel, 0, GameRules.MaxShieldUpgrades);
+            d.lastLevel = Mathf.Clamp(d.lastLevel, 1, 4);
             if (d.ownedWeapons == null) d.ownedWeapons = new System.Collections.Generic.List<string>();
             if (!d.ownedWeapons.Contains("hacha")) d.ownedWeapons.Insert(0, "hacha");
             var unique = new System.Collections.Generic.List<string>();
@@ -108,12 +109,40 @@ namespace Dolores1810
             if (string.IsNullOrEmpty(d.equippedWeapon) || !d.ownedWeapons.Contains(d.equippedWeapon)) d.equippedWeapon = "hacha";
             if (d.completedLevels == null) d.completedLevels = new System.Collections.Generic.List<int>();
             var lv = new System.Collections.Generic.List<int>();
-            foreach (int l in d.completedLevels) if (l >= 1 && l <= 3 && !lv.Contains(l)) lv.Add(l);
+            foreach (int l in d.completedLevels) if (l >= 1 && l <= 4 && !lv.Contains(l)) lv.Add(l);
             d.completedLevels = lv;
             if (d.openedChests == null) d.openedChests = new System.Collections.Generic.List<string>();
             if (d.foundCollectibles == null) d.foundCollectibles = new System.Collections.Generic.List<string>();
             if (d.doneMissions == null) d.doneMissions = new System.Collections.Generic.List<string>();
+            if (d.levelKills == null || d.levelKills.Length != 4) d.levelKills = ResizeIntArray(d.levelKills, 4);
+            if (d.levelCoins == null || d.levelCoins.Length != 4) d.levelCoins = ResizeIntArray(d.levelCoins, 4);
+            if (d.levelScores == null || d.levelScores.Length != 4) d.levelScores = ResizeIntArray(d.levelScores, 4);
+            if (d.levelTimes == null || d.levelTimes.Length != 4) d.levelTimes = ResizeFloatArray(d.levelTimes, 4);
+            if (d.levelBreaks == null || d.levelBreaks.Length != 4) d.levelBreaks = ResizeIntArray(d.levelBreaks, 4);
+            if (d.levelMissions == null || d.levelMissions.Length != 4) d.levelMissions = ResizeIntArray(d.levelMissions, 4);
             return d;
+        }
+
+        static int[] ResizeIntArray(int[] src, int len)
+        {
+            var dst = new int[len];
+            if (src != null)
+            {
+                int n = Mathf.Min(src.Length, len);
+                for (int i = 0; i < n; i++) dst[i] = Mathf.Max(0, src[i]);
+            }
+            return dst;
+        }
+
+        static float[] ResizeFloatArray(float[] src, int len)
+        {
+            var dst = new float[len];
+            if (src != null)
+            {
+                int n = Mathf.Min(src.Length, len);
+                for (int i = 0; i < n; i++) dst[i] = Mathf.Max(0f, src[i]);
+            }
+            return dst;
         }
     }
 }

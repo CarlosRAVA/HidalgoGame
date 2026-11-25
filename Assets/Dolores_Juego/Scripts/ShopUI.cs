@@ -52,6 +52,7 @@ namespace Dolores1810
             var coinTrim = UIFactory.Box(coinBadge.transform, "Borde", new Color(0.86f, 0.67f, 0.25f, 0.85f), new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 68f));
             UIFactory.Place(coinTrim.rectTransform, new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 68f));
             coinsText = UIFactory.Label(coinBadge.transform, "Monedas", "", 38, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            coinsText.alignByGeometry = true;
             UIFactory.Stretch(coinsText.rectTransform);
 
             var db = GameDatabase.I;
@@ -84,10 +85,10 @@ namespace Dolores1810
             detailIcon = UIFactory.Icon(detailIconFrame.transform, "DetalleIcono", null, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 104f));
             UIFactory.PlaceCenter(detailIcon.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(104f, 104f));
 
-            detailTitle = UIFactory.Label(detailBack.transform, "DetalleTitulo", "", 36, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
-            UIFactory.Place(detailTitle.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -14f), new Vector2(1030f, 44f));
-            detailBody = UIFactory.Label(detailBack.transform, "DetalleTexto", "", 27, UIFactory.Cream, TextAnchor.UpperLeft, FontStyle.Normal, false);
-            UIFactory.Place(detailBody.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -62f), new Vector2(1030f, 94f));
+            detailTitle = UIFactory.Label(detailBack.transform, "DetalleTitulo", "", 38, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.Place(detailTitle.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -12f), new Vector2(1030f, 46f));
+            detailBody = UIFactory.Label(detailBack.transform, "DetalleTexto", "", 30, UIFactory.Cream, TextAnchor.UpperLeft, FontStyle.Bold, false);
+            UIFactory.Place(detailBody.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -60f), new Vector2(1030f, 96f));
 
             closeButton = UIFactory.MakeButton(t, "Cerrar", new Vector2(615f, -362f), new Vector2(310f, 100f), Close);
         }
@@ -128,15 +129,16 @@ namespace Dolores1810
             e.icon = UIFactory.Icon(iconFrame.transform, "Icono", item.icon, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, 70f));
             UIFactory.PlaceCenter(e.icon.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(70f, 70f));
 
-            e.nameText = UIFactory.Label(b.transform, "Nombre", item.displayName, 30, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            e.nameText = UIFactory.Label(b.transform, "Nombre", item.displayName, 32, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold, false);
             UIFactory.Place(e.nameText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -12f), new Vector2(430f, 42f));
 
-            e.subText = UIFactory.Label(b.transform, "Subtitulo", "", 22, new Color(0.95f, 0.86f, 0.7f, 0.95f), TextAnchor.MiddleLeft, FontStyle.Normal, false);
-            UIFactory.Place(e.subText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -56f), new Vector2(430f, 34f));
+            e.subText = UIFactory.Label(b.transform, "Subtitulo", "", 24, new Color(0.95f, 0.86f, 0.7f, 0.98f), TextAnchor.MiddleLeft, FontStyle.Bold, false);
+            UIFactory.Place(e.subText.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -56f), new Vector2(430f, 36f));
 
             e.stateBadge = UIFactory.Box(b.transform, "EstadoFondo", new Color(0.16f, 0.08f, 0.03f, 0.9f), new Vector2(1f, 0.5f), Vector2.zero, new Vector2(204f, 72f));
             UIFactory.PlaceCenter(e.stateBadge.rectTransform, new Vector2(1f, 0.5f), new Vector2(-116f, 0f), new Vector2(204f, 72f));
-            e.stateText = UIFactory.Label(e.stateBadge.transform, "Estado", "", 25, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            e.stateText = UIFactory.Label(e.stateBadge.transform, "Estado", "", 26, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            e.stateText.alignByGeometry = true;
             UIFactory.Stretch(e.stateText.rectTransform);
 
             var card = b.gameObject.AddComponent<ShopCard>();
