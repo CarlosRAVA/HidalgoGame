@@ -157,15 +157,52 @@ namespace Dolores1810.EditorTools
             }
         }
 
+        static bool IsAndroidModuleInstalled()
+        {
+            string contents = EditorApplication.applicationContentsPath;
+            if (!string.IsNullOrEmpty(contents))
+            {
+                string p1 = Path.Combine(contents, "PlaybackEngines", "AndroidPlayer");
+                if (Directory.Exists(p1)) return true;
+            }
+
+            string appDir = Path.GetDirectoryName(EditorApplication.applicationPath);
+            if (!string.IsNullOrEmpty(appDir))
+            {
+                string p2 = Path.Combine(appDir, "Data", "PlaybackEngines", "AndroidPlayer");
+                if (Directory.Exists(p2)) return true;
+            }
+
+            return false;
+        }
+
         [MenuItem("Tools/Dolores 1810/Exportar APK para Android (.apk)", priority = 22)]
         public static void ExportAndroidAPK()
         {
+            // 1. Verificar primero si el módulo de Android está instalado en Unity
+            if (!IsAndroidModuleInstalled())
+            {
+                Debug.LogWarning("[ItchExporter] El módulo 'Android Build Support' no está instalado en este editor de Unity.");
+                EditorUtility.DisplayDialog(
+                    "Módulo de Android no instalado en Unity",
+                    "Unity no puede compilar el archivo .apk porque aún no tiene instalado el módulo 'Android Build Support'.\n\n" +
+                    "Pasos para instalarlo (toma 1 minuto):\n" +
+                    "1. Abre tu ventana de Unity Hub.\n" +
+                    "2. En la columna izquierda, entra a 'Installs' (Instalaciones).\n" +
+                    "3. En tu versión de Unity (6000.6.0f1), haz clic en el engrane ⚙️ y elige 'Add modules' (Añadir módulos).\n" +
+                    "4. Marca la casilla 'Android Build Support' (y 'Android SDK & NDK Tools' / 'OpenJDK').\n" +
+                    "5. Haz clic en 'Install'.\n\n" +
+                    "Una vez que termine de descargarse, reinicia Unity y vuelve a presionar este botón para generar tu .apk.",
+                    "Entendido");
+                return;
+            }
+
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string buildsDir = Path.Combine(projectRoot, "Builds");
             string androidDir = Path.Combine(buildsDir, "Android");
             string apkPath = Path.Combine(androidDir, "1810_Dolores_Android.apk");
 
-            // 1. Configurar PlayerSettings y compatibilidad universal para Android
+            // 2. Configurar PlayerSettings y compatibilidad universal para Android
             PlayerSettings.companyName = "Dolores 1810";
             PlayerSettings.productName = "1810: Dolores - El Grito de la Libertad";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.Dolores1810.ElGritoDeLaLibertad");
@@ -190,23 +227,6 @@ namespace Dolores1810.EditorTools
             // Generar archivo .APK instalable directamente (no .AAB)
             EditorUserBuildSettings.buildAppBundle = false;
             EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
-
-            // 2. Verificar soporte de compilación de Android en Unity
-            if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Android, BuildTarget.Android))
-            {
-                Debug.LogWarning("[ItchExporter] El módulo 'Android Build Support' no está instalado en este editor de Unity.");
-                EditorUtility.DisplayDialog(
-                    "Se requiere módulo de Android en Unity Hub",
-                    "Para compilar el archivo instalable .apk, necesitas activar el módulo 'Android Build Support' en Unity Hub (toma 1 minuto):\n\n" +
-                    "1. Abre la ventana de Unity Hub.\n" +
-                    "2. En la barra lateral izquierda, entra a 'Installs' (Instalaciones).\n" +
-                    "3. En tu versión de Unity (6000.6.0f1), haz clic en el engrane ⚙️ y elige 'Add modules' (Añadir módulos).\n" +
-                    "4. Marca la casilla 'Android Build Support' (junto con 'Android SDK & NDK Tools' y 'OpenJDK').\n" +
-                    "5. Presiona 'Install'. Una vez termine, reinicia Unity.\n\n" +
-                    "Al reiniciar, vuelve a hacer clic aquí y generará tu archivo .apk de inmediato.",
-                    "Entendido");
-                return;
-            }
 
             if (!Directory.Exists(buildsDir)) Directory.CreateDirectory(buildsDir);
             if (!Directory.Exists(androidDir)) Directory.CreateDirectory(androidDir);
