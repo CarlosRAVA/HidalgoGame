@@ -47,6 +47,10 @@ namespace Dolores1810
         public static float Horizontal()
         {
             float h = 0f;
+            if (VirtualJoystick.Instance != null && Mathf.Abs(VirtualJoystick.Instance.Horizontal) > 0.08f)
+            {
+                h += VirtualJoystick.Instance.Horizontal;
+            }
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null)
@@ -73,6 +77,10 @@ namespace Dolores1810
         public static float Vertical()
         {
             float v = 0f;
+            if (VirtualJoystick.Instance != null && Mathf.Abs(VirtualJoystick.Instance.Vertical) > 0.12f)
+            {
+                v += VirtualJoystick.Instance.Vertical;
+            }
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null)
@@ -98,6 +106,7 @@ namespace Dolores1810
 
         public static bool JumpDown(bool allowUpKeys)
         {
+            if (TouchControls.ConsumeJump()) return true;
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && (k.spaceKey.wasPressedThisFrame || (allowUpKeys && (k.wKey.wasPressedThisFrame || k.upArrowKey.wasPressedThisFrame)))) return true;
@@ -113,6 +122,7 @@ namespace Dolores1810
 
         public static bool JumpHeld(bool allowUpKeys)
         {
+            if (TouchControls.IsJumpHeld()) return true;
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && (k.spaceKey.isPressed || (allowUpKeys && (k.wKey.isPressed || k.upArrowKey.isPressed)))) return true;
@@ -128,6 +138,20 @@ namespace Dolores1810
 
         public static bool AttackDown()
         {
+            if (TouchControls.ConsumeAttack()) return true;
+
+            // En modo táctil (o móvil), atacar se realiza ÚNICAMENTE con el botón táctil de ataque (no con clics ni arrastre del joystick)
+            if (Application.isMobilePlatform || (TouchControls.Instance != null && TouchControls.Instance.IsTouchMode))
+            {
+                return false;
+            }
+
+            // Si el puntero del ratón está sobre la interfaz gráfica (joystick, botones, pausa), nunca atacar con el clic
+            if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                return false;
+            }
+
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && (k.jKey.wasPressedThisFrame || k.zKey.wasPressedThisFrame || k.xKey.wasPressedThisFrame)) return true;
@@ -144,6 +168,7 @@ namespace Dolores1810
 
         public static bool RunHeld()
         {
+            if (TouchControls.IsRunHeld()) return true;
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && (k.leftShiftKey.isPressed || k.rightShiftKey.isPressed)) return true;
@@ -158,6 +183,7 @@ namespace Dolores1810
 
         public static bool InteractDown()
         {
+            if (TouchControls.ConsumeInteract()) return true;
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && k.eKey.wasPressedThisFrame) return true;
@@ -172,6 +198,7 @@ namespace Dolores1810
 
         public static bool NextWeaponDown()
         {
+            if (TouchControls.ConsumeWeapon()) return true;
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && k.qKey.wasPressedThisFrame) return true;
@@ -210,6 +237,7 @@ namespace Dolores1810
 
         public static bool PauseDown()
         {
+            if (TouchControls.ConsumePause()) return true;
 #if ENABLE_INPUT_SYSTEM
             var k = Keyboard.current;
             if (k != null && (k.escapeKey.wasPressedThisFrame || k.pKey.wasPressedThisFrame)) return true;

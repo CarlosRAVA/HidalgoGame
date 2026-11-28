@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -135,6 +136,13 @@ namespace Dolores1810.EditorTools
             ui.panelSprite = S("UI/panel.png");
             ui.buttonSprite = S("UI/button.png");
             ui.titleFont = AssetDatabase.LoadAssetAtPath<Font>(Root + "/Fonts/TitleFont.otf");
+            ui.joystickBgSprite = AssetDatabase.LoadAllAssetsAtPath("Assets/VirtualJoystickPack/Joystick.png").OfType<Sprite>().FirstOrDefault();
+            ui.joystickHandleSprite = AssetDatabase.LoadAllAssetsAtPath("Assets/VirtualJoystickPack/SmallHandleFilled.png").OfType<Sprite>().FirstOrDefault();
+            ui.buttonRoundSprite = AssetDatabase.LoadAllAssetsAtPath("Assets/VirtualJoystickPack/LargeHandleFilled.png").OfType<Sprite>().FirstOrDefault();
+            ui.attackIconSprite = S("UI/icon_ataque.png");
+            ui.speedIconSprite = S("UI/icon_velocidad.png");
+            ui.swordIconSprite = S("UI/icon_espada.png");
+            if (player != null && ui.touchControls != null) player.joystick = ui.touchControls.joystick;
         }
 
         // ================================================================== terreno

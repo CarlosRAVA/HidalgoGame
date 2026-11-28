@@ -25,9 +25,9 @@ namespace Dolores1810
         void Build(bool allowReset)
         {
             Transform t = transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1100f, 800f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1360f, 840f));
             var title = UIFactory.Label(t, "Titulo", "CONFIGURACIÓN", 76, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 320f), new Vector2(1000f, 100f));
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 330f), new Vector2(1100f, 100f));
 
             masterSlider = AddRow(t, "Volumen general", 190f, GameSettings.Master, v => { GameSettings.SetMaster(v); UpdateTexts(); }, out masterText);
             Text mt; AddRow(t, "Música", 60f, GameSettings.Music, v => { GameSettings.SetMusic(v); UpdateTexts(); }, out mt); musicText = mt;
@@ -35,19 +35,19 @@ namespace Dolores1810
 
             if (allowReset)
             {
-                resetButton = UIFactory.MakeButton(t, "Borrar progreso", new Vector2(-250f, -250f), new Vector2(440f, 90f), OnReset);
+                resetButton = UIFactory.MakeButton(t, "Borrar progreso", new Vector2(-250f, -270f), new Vector2(440f, 90f), OnReset);
             }
-            backButton = UIFactory.MakeButton(t, "Volver", new Vector2(allowReset ? 250f : 0f, -250f), new Vector2(360f, 90f), Back);
+            backButton = UIFactory.MakeButton(t, "Volver", new Vector2(allowReset ? 250f : 0f, -270f), new Vector2(380f, 90f), Back);
             UpdateTexts();
         }
 
         Slider AddRow(Transform t, string label, float y, float value, UnityEngine.Events.UnityAction<float> onChange, out Text valueText)
         {
             var l = UIFactory.Label(t, label, label, 40, UIFactory.Ink, TextAnchor.MiddleLeft, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(l.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-330f, y + 36f), new Vector2(500f, 50f));
-            var s = UIFactory.MakeSlider(t, new Vector2(-60f, y - 14f), 660f, value, onChange);
+            UIFactory.PlaceCenter(l.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-200f, y + 36f), new Vector2(560f, 50f));
+            var s = UIFactory.MakeSlider(t, new Vector2(-90f, y - 14f), 780f, value, onChange);
             valueText = UIFactory.Label(t, label + "_valor", "", 40, UIFactory.Ink, TextAnchor.MiddleRight, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(valueText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(400f, y - 14f), new Vector2(160f, 50f));
+            UIFactory.PlaceCenter(valueText.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(410f, y - 14f), new Vector2(140f, 50f));
             return s;
         }
 

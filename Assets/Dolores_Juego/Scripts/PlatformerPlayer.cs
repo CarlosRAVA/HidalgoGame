@@ -45,6 +45,9 @@ namespace Dolores1810
         public FrameAnimator animator;
         public SpriteClip idle, walk, run, jump, fall, climb, hit, death;
 
+        [Header("Controles Móviles")]
+        public VirtualJoystick joystick;
+
         Rigidbody2D rb;
         BoxCollider2D col;
         int groundMask, enemyMask;
@@ -187,6 +190,14 @@ namespace Dolores1810
                 bool upKeys = climbZone == null;
                 h = GameInput.Horizontal();
                 v = GameInput.Vertical();
+                if (joystick == null) joystick = VirtualJoystick.Instance;
+                if (joystick != null)
+                {
+                    float jh = joystick.Horizontal;
+                    float jv = joystick.Vertical;
+                    if (Mathf.Abs(jh) > 0.08f) h = Mathf.Clamp(h + jh, -1f, 1f);
+                    if (Mathf.Abs(jv) > 0.12f) v = Mathf.Clamp(v + jv, -1f, 1f);
+                }
                 jumpDown = GameInput.JumpDown(upKeys);
                 jumpHeld = GameInput.JumpHeld(upKeys);
                 atkDown = GameInput.AttackDown();

@@ -42,13 +42,13 @@ namespace Dolores1810
         void Build()
         {
             Transform t = transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1680f, 980f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1780f, 1020f));
 
             var title = UIFactory.Label(t, "Titulo", "TIENDA DEL MERCADER", 68, UIFactory.Ink, TextAnchor.MiddleLeft, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-240f, 418f), new Vector2(1060f, 90f));
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-240f, 435f), new Vector2(1060f, 80f));
 
             var coinBadge = UIFactory.Box(t, "MonedasFondo", new Color(0.24f, 0.14f, 0.07f, 0.94f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(390f, 68f));
-            UIFactory.PlaceCenter(coinBadge.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(585f, 418f), new Vector2(390f, 68f));
+            UIFactory.PlaceCenter(coinBadge.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(585f, 435f), new Vector2(390f, 68f));
             var coinTrim = UIFactory.Box(coinBadge.transform, "Borde", new Color(0.86f, 0.67f, 0.25f, 0.85f), new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 68f));
             UIFactory.Place(coinTrim.rectTransform, new Vector2(0f, 0f), Vector2.zero, new Vector2(6f, 68f));
             coinsText = UIFactory.Label(coinBadge.transform, "Monedas", "", 38, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
@@ -75,8 +75,8 @@ namespace Dolores1810
             message = UIFactory.Label(t, "Mensaje", "", 32, new Color(0.62f, 0.1f, 0.06f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
             UIFactory.PlaceCenter(message.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -248f), new Vector2(1500f, 44f));
 
-            var detailBack = UIFactory.Box(t, "DetalleFondo", new Color(0.22f, 0.13f, 0.06f, 0.94f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1220f, 165f));
-            UIFactory.PlaceCenter(detailBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-170f, -362f), new Vector2(1220f, 165f));
+            var detailBack = UIFactory.Box(t, "DetalleFondo", new Color(0.22f, 0.13f, 0.06f, 0.94f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1220f, 160f));
+            UIFactory.PlaceCenter(detailBack.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(-170f, -375f), new Vector2(1220f, 160f));
             var detailTrim = UIFactory.Box(detailBack.transform, "BordeSuperior", new Color(0.86f, 0.67f, 0.25f, 0.8f), new Vector2(0f, 1f), Vector2.zero, new Vector2(1220f, 4f));
             UIFactory.Place(detailTrim.rectTransform, new Vector2(0f, 1f), Vector2.zero, new Vector2(1220f, 4f));
 
@@ -90,7 +90,7 @@ namespace Dolores1810
             detailBody = UIFactory.Label(detailBack.transform, "DetalleTexto", "", 30, UIFactory.Cream, TextAnchor.UpperLeft, FontStyle.Bold, false);
             UIFactory.Place(detailBody.rectTransform, new Vector2(0f, 1f), new Vector2(166f, -60f), new Vector2(1030f, 96f));
 
-            closeButton = UIFactory.MakeButton(t, "Cerrar", new Vector2(615f, -362f), new Vector2(310f, 100f), Close);
+            closeButton = UIFactory.MakeButton(t, "Cerrar", new Vector2(615f, -375f), new Vector2(310f, 96f), Close);
         }
 
         void AddCard(ShopItemData item, WeaponData w)

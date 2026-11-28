@@ -135,9 +135,9 @@ namespace Dolores1810
             overlay.raycastTarget = true;
             levelPanel = overlay.gameObject;
             Transform t = levelPanel.transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1780f, 900f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1850f, 960f));
             var title = UIFactory.Label(t, "Titulo", "SELECCIONAR NIVEL", 76, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 385f), new Vector2(1400f, 100f));
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 405f), new Vector2(1400f, 100f));
 
             var db = GameDatabase.I;
             for (int i = 0; i < 4; i++)
@@ -164,7 +164,7 @@ namespace Dolores1810
                 var c = new Card(); c.button = btn; c.shade = shade; c.lockIcon = lockI; c.status = st; c.level = lv;
                 cards[i] = c;
             }
-            levelBack = UIFactory.MakeButton(t, "Volver", new Vector2(0f, -400f), new Vector2(360f, 80f), OnSubBack);
+            levelBack = UIFactory.MakeButton(t, "Volver", new Vector2(0f, -390f), new Vector2(360f, 78f), OnSubBack);
             levelPanel.SetActive(false);
         }
 
@@ -202,12 +202,12 @@ namespace Dolores1810
             var overlay = UIFactory.FullScreen(root, name, new Color(0f, 0f, 0f, 0.65f));
             overlay.raycastTarget = true;
             Transform t = overlay.transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1280f, 880f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1420f, 940f));
             var ti = UIFactory.Label(t, "Titulo", title, 90, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(ti.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 350f), new Vector2(1100f, 110f));
+            UIFactory.PlaceCenter(ti.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 375f), new Vector2(1180f, 100f));
             var tx = UIFactory.Label(t, "Texto", body, 36, UIFactory.Ink, TextAnchor.UpperLeft, FontStyle.Normal, false);
-            UIFactory.PlaceCenter(tx.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(1100f, 560f));
-            back = UIFactory.MakeButton(t, "Volver", new Vector2(0f, -350f), new Vector2(420f, 90f), OnSubBack);
+            UIFactory.PlaceCenter(tx.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 25f), new Vector2(1180f, 570f));
+            back = UIFactory.MakeButton(t, "Volver", new Vector2(0f, -365f), new Vector2(420f, 88f), OnSubBack);
             overlay.gameObject.SetActive(false);
             return overlay.gameObject;
         }

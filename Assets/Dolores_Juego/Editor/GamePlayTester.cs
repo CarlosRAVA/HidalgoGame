@@ -8,7 +8,9 @@ using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace Dolores1810.EditorTools
 {
@@ -60,6 +62,7 @@ namespace Dolores1810.EditorTools
             RunTest("14. Navegación con Teclado y Control", Test14_KeyboardAndGamepadNavigation);
             RunTest("15. Consola y Errores de Escena", Test15_ConsoleErrorsDuringPlaythrough);
             RunTest("16. Auditoría de Geometría de Niveles", Test16_LevelGeometryAudit);
+            RunTest("17. Controles Táctiles y Joystick Virtual Móvil", Test17_MobileVirtualJoystickAndTouchControls);
             }
             catch (Exception ex)
             {
@@ -815,6 +818,138 @@ namespace Dolores1810.EditorTools
             else
             {
                 RecordFail("16. Auditoría de geometría de niveles", "Problemas detectados en auditoría: " + auditSummary);
+            }
+        }
+
+        // =====================================================================================
+        // PRUEBA 17: Joystick Virtual Móvil y Controles Táctiles en Pantalla
+        // =====================================================================================
+        static void Test17_MobileVirtualJoystickAndTouchControls()
+        {
+            var canvasGO = new GameObject("TestCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+            var canvas = canvasGO.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var bgGO = new GameObject("JoystickBackground", typeof(RectTransform), typeof(Image));
+            bgGO.transform.SetParent(canvasGO.transform, false);
+            var bgRt = bgGO.GetComponent<RectTransform>();
+            bgRt.sizeDelta = new Vector2(200f, 200f);
+            bgRt.position = new Vector3(100f, 100f, 0f);
+
+            var handleGO = new GameObject("JoystickHandle", typeof(RectTransform), typeof(Image));
+            handleGO.transform.SetParent(bgGO.transform, false);
+            var handleRt = handleGO.GetComponent<RectTransform>();
+            handleRt.sizeDelta = new Vector2(80f, 80f);
+
+            var vj = bgGO.AddComponent<VirtualJoystick>();
+            vj.background = bgRt;
+            vj.handle = handleRt;
+            vj.handleRange = 1f;
+
+            var esGO = new GameObject("TestEventSystem", typeof(EventSystem));
+            var es = esGO.GetComponent<EventSystem>();
+
+            // Simular arrastre a la derecha (x = 180f, y = 100f)
+            var eventData = new PointerEventData(es);
+            eventData.position = new Vector2(180f, 100f);
+            vj.OnDrag(eventData);
+
+            bool dragRightOk = vj.Horizontal > 0.5f && Mathf.Approximately(vj.Vertical, 0f);
+            bool gameInputH = GameInput.Horizontal() > 0.4f;
+            bool joyNoAttack = !GameInput.AttackDown(); // Mover joystick NO debe disparar ataque
+
+            // Simular arrastre hacia arriba (x = 100f, y = 180f)
+            eventData.position = new Vector2(100f, 180f);
+            vj.OnDrag(eventData);
+
+            bool dragUpOk = vj.Vertical > 0.5f;
+            bool gameInputV = GameInput.Vertical() > 0.4f;
+
+            // Soltar joystick
+            vj.OnPointerUp(eventData);
+            bool releaseOk = Mathf.Approximately(vj.Horizontal, 0f) && Mathf.Approximately(vj.Vertical, 0f);
+
+            // Probar TouchButton y TouchControls
+            var tcGO = new GameObject("TouchControlsRoot", typeof(TouchControls));
+            var tc = tcGO.GetComponent<TouchControls>();
+            tc.joystick = vj;
+            var cg = tcGO.AddComponent<CanvasGroup>();
+            tc.gameplayGroup = cg;
+
+            var jmpGO = new GameObject("BtnJump", typeof(RectTransform), typeof(Image), typeof(TouchButton));
+            jmpGO.transform.SetParent(tcGO.transform, false);
+            tc.btnJump = jmpGO.GetComponent<TouchButton>();
+
+            var atkGO = new GameObject("BtnAtk", typeof(RectTransform), typeof(Image), typeof(TouchButton));
+            atkGO.transform.SetParent(tcGO.transform, false);
+            tc.btnAttack = atkGO.GetComponent<TouchButton>();
+
+            var useGO = new GameObject("BtnUse", typeof(RectTransform), typeof(Image), typeof(TouchButton));
+            useGO.transform.SetParent(tcGO.transform, false);
+            tc.btnInteract = useGO.GetComponent<TouchButton>();
+
+            var wepGO = new GameObject("BtnWep", typeof(RectTransform), typeof(Image), typeof(TouchButton));
+            wepGO.transform.SetParent(tcGO.transform, false);
+            tc.btnWeapon = wepGO.GetComponent<TouchButton>();
+
+            var runGO = new GameObject("BtnRun", typeof(RectTransform), typeof(Image), typeof(TouchButton));
+            runGO.transform.SetParent(tcGO.transform, false);
+            tc.btnRun = runGO.GetComponent<TouchButton>();
+
+            var pauGO = new GameObject("BtnPau", typeof(RectTransform), typeof(Image), typeof(TouchButton));
+            pauGO.transform.SetParent(tcGO.transform, false);
+            tc.btnPause = pauGO.GetComponent<TouchButton>();
+
+            // Simular toque en Salto
+            tc.btnJump.OnPointerDown(eventData);
+            bool jumpHeld = TouchControls.IsJumpHeld();
+            bool jumpDown = GameInput.JumpDown(false);
+            tc.btnJump.OnPointerUp(eventData);
+            bool jumpReleased = !TouchControls.IsJumpHeld();
+
+            // Simular toque en Ataque
+            tc.btnAttack.OnPointerDown(eventData);
+            bool atkDown = GameInput.AttackDown();
+            tc.btnAttack.OnPointerUp(eventData);
+
+            // Simular toque en Interactuar
+            tc.btnInteract.OnPointerDown(eventData);
+            bool useDown = TouchControls.ConsumeInteract();
+            tc.btnInteract.OnPointerUp(eventData);
+
+            // Simular toque en Arma
+            tc.btnWeapon.OnPointerDown(eventData);
+            bool wepDown = TouchControls.ConsumeWeapon();
+            tc.btnWeapon.OnPointerUp(eventData);
+
+            // Simular toque en Correr
+            tc.btnRun.OnPointerDown(eventData);
+            bool runHeld = TouchControls.IsRunHeld();
+            tc.btnRun.OnPointerUp(eventData);
+
+            // Simular toque en Pausa
+            tc.btnPause.OnPointerDown(eventData);
+            bool pauDown = GameInput.PauseDown();
+            tc.btnPause.OnPointerUp(eventData);
+
+            // Limpieza
+            UnityEngine.Object.DestroyImmediate(canvasGO);
+            UnityEngine.Object.DestroyImmediate(tcGO);
+            UnityEngine.Object.DestroyImmediate(esGO);
+
+            bool allOk = dragRightOk && gameInputH && joyNoAttack && dragUpOk && gameInputV && releaseOk
+                         && jumpHeld && jumpDown && jumpReleased && atkDown && useDown && wepDown && runHeld && pauDown;
+
+            if (allOk)
+            {
+                RecordPass("17. Controles Táctiles Móviles y Virtual Joystick",
+                    "VirtualJoystick calculó correctamente vector horizontal y vertical y retorno a cero. TouchButtons registraron y consumieron eventos de Salto, Ataque, Interactuar, Arma, Correr y Pausa integrados a GameInput.");
+            }
+            else
+            {
+                RecordFail("17. Controles Táctiles Móviles y Virtual Joystick",
+                    string.Format("dragRight={0}, gameInputH={1}, dragUp={2}, gameInputV={3}, release={4}, jumpHeld={5}, jumpDown={6}, atkDown={7}, useDown={8}, wepDown={9}, runHeld={10}, pauDown={11}",
+                        dragRightOk, gameInputH, dragUpOk, gameInputV, releaseOk, jumpHeld, jumpDown, atkDown, useDown, wepDown, runHeld, pauDown));
             }
         }
     }

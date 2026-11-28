@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -21,6 +22,16 @@ namespace Dolores1810
         public Sprite buttonSprite;
         public Font font;
         public Font titleFont;
+
+        [Header("Controles Táctiles")]
+        public Sprite joystickBgSprite;
+        public Sprite joystickHandleSprite;
+        public Sprite buttonRoundSprite;
+        public Sprite attackIconSprite;
+        public Sprite speedIconSprite;
+        public Sprite swordIconSprite;
+
+        public TouchControls touchControls;
 
         class MissionCardUI
         {
@@ -151,9 +162,9 @@ namespace Dolores1810
             UIFactory.Place(livesText.rectTransform, new Vector2(0f, 1f), new Vector2(330f, -224f), new Vector2(280f, 54f));
 
             scoreText = UIFactory.Label(root, "Puntos", "PUNTOS 000000", 46, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold);
-            UIFactory.Place(scoreText.rectTransform, new Vector2(1f, 1f), new Vector2(-44f, -38f), new Vector2(720f, 56f));
+            UIFactory.Place(scoreText.rectTransform, new Vector2(1f, 1f), new Vector2(-120f, -38f), new Vector2(640f, 56f));
             timeText = UIFactory.Label(root, "Tiempo", "00:00", 36, new Color(1f, 1f, 1f, 0.9f), TextAnchor.MiddleRight, FontStyle.Bold);
-            UIFactory.Place(timeText.rectTransform, new Vector2(1f, 1f), new Vector2(-44f, -96f), new Vector2(400f, 42f));
+            UIFactory.Place(timeText.rectTransform, new Vector2(1f, 1f), new Vector2(-120f, -96f), new Vector2(400f, 42f));
 
             // Tracker de misiones en HUD
             var hmr = UIFactory.Rect("MisionesHUD", root);
@@ -265,6 +276,8 @@ namespace Dolores1810
             exitText = UIFactory.Label(er, "Texto", "", 48, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UIFactory.Stretch(exitText.rectTransform);
 
+            BuildTouchControls(root);
+
             BuildPause(root);
             settings = SettingsUI.Create(root, OnSettingsBack, false);
             settings.gameObject.SetActive(false);
@@ -361,16 +374,16 @@ namespace Dolores1810
         {
             pausePanel = MakeOverlay(root, "Pausa", new Color(0f, 0f, 0f, 0.68f));
             Transform t = pausePanel.transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1380f, 900f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1520f, 960f));
             var title = UIFactory.Label(t, "Titulo", "PAUSA", 104, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Normal, false, titleFont);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 355f), new Vector2(900f, 120f));
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 375f), new Vector2(900f, 120f));
             pauseFirst = UIFactory.MakeButton(t, "Continuar", new Vector2(-400f, 180f), new Vector2(480f, 92f), () => GameSession.I.SetPaused(false));
             UIFactory.MakeButton(t, "Reiniciar nivel", new Vector2(-400f, 65f), new Vector2(480f, 92f), () => GameSession.I.Restart());
             UIFactory.MakeButton(t, "Configuración", new Vector2(-400f, -50f), new Vector2(480f, 92f), OpenSettings);
             UIFactory.MakeButton(t, "Menú principal", new Vector2(-400f, -165f), new Vector2(480f, 92f), () => GameSession.I.GoMenu());
 
             var board = UIFactory.Box(t, "TableroMisiones", new Color(0.22f, 0.13f, 0.06f, 0.95f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(710f, 545f));
-            UIFactory.PlaceCenter(board.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(245f, 10f), new Vector2(710f, 545f));
+            UIFactory.PlaceCenter(board.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(250f, 10f), new Vector2(710f, 545f));
             var header = UIFactory.Box(board.transform, "Encabezado", new Color(0.14f, 0.08f, 0.04f, 0.98f), new Vector2(0f, 1f), Vector2.zero, new Vector2(710f, 56f));
             UIFactory.Box(header.transform, "LineaOro", new Color(0.9f, 0.7f, 0.25f, 0.85f), new Vector2(0f, 0f), Vector2.zero, new Vector2(710f, 3f));
             var mh = UIFactory.Label(header.transform, "MisionesTitulo", "MISIONES DEL NIVEL", 32, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold, false);
@@ -404,8 +417,8 @@ namespace Dolores1810
                 pauseMissionCards[i] = c;
             }
 
-            var tip = UIFactory.Label(t, "Controles", "A/D mover · SHIFT correr · ESPACIO saltar · J atacar\nE interactuar · W/S trepar · Q o 1-5 cambiar arma", 31, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(tip.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -355f), new Vector2(1240f, 96f));
+            var tip = UIFactory.Label(t, "Controles", "A/D mover · SHIFT correr · ESPACIO saltar · J atacar\nE interactuar · W/S trepar · Q o 1-5 cambiar arma", 30, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.PlaceCenter(tip.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -365f), new Vector2(1280f, 90f));
             pausePanel.SetActive(false);
         }
 
@@ -413,13 +426,13 @@ namespace Dolores1810
         {
             gameOverPanel = MakeOverlay(root, "GameOver", new Color(0.12f, 0f, 0f, 0.78f));
             Transform t = gameOverPanel.transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(900f, 700f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1080f, 760f));
             var title = UIFactory.Label(t, "Titulo", "¡HAS CAÍDO!", 100, new Color(0.62f, 0.1f, 0.06f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 230f), new Vector2(820f, 120f));
-            var sub = UIFactory.Label(t, "Sub", "La lucha por la libertad continúa.\nTus monedas y mejoras se conservan.", 40, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 90f), new Vector2(820f, 130f));
-            gameOverFirst = UIFactory.MakeButton(t, "Reintentar", new Vector2(0f, -80f), new Vector2(560f, 100f), () => GameSession.I.Restart());
-            UIFactory.MakeButton(t, "Menú principal", new Vector2(0f, -200f), new Vector2(560f, 100f), () => GameSession.I.GoMenu());
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 240f), new Vector2(860f, 120f));
+            var sub = UIFactory.Label(t, "Sub", "La lucha por la libertad continúa.\nTus monedas y mejoras se conservan.", 38, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 100f), new Vector2(860f, 130f));
+            gameOverFirst = UIFactory.MakeButton(t, "Reintentar", new Vector2(0f, -70f), new Vector2(560f, 96f), () => GameSession.I.Restart());
+            UIFactory.MakeButton(t, "Menú principal", new Vector2(0f, -190f), new Vector2(560f, 96f), () => GameSession.I.GoMenu());
             gameOverPanel.SetActive(false);
         }
 
@@ -427,13 +440,13 @@ namespace Dolores1810
         {
             victoryPanel = MakeOverlay(root, "Victoria", new Color(0.02f, 0.02f, 0.12f, 0.72f));
             Transform t = victoryPanel.transform;
-            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1380f, 980f));
+            UIFactory.Panel(t, "Panel", Vector2.zero, new Vector2(1460f, 1010f));
 
             var title = UIFactory.Label(t, "Titulo", "¡FIN DEL JUEGO!", 86, new Color(0.55f, 0.32f, 0.02f, 1f), TextAnchor.MiddleCenter, FontStyle.Bold, false, titleFont);
-            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 405f), new Vector2(1200f, 100f));
+            UIFactory.PlaceCenter(title.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 415f), new Vector2(1200f, 90f));
 
-            var sub = UIFactory.Label(t, "Sub", "¡La Campana de Dolores ha sonado y comenzó la lucha por la Independencia de México!", 32, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
-            UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 332f), new Vector2(1220f, 56f));
+            var sub = UIFactory.Label(t, "Sub", "¡La Campana de Dolores ha sonado y comenzó la lucha por la Independencia de México!", 31, UIFactory.Ink, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.PlaceCenter(sub.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, 345f), new Vector2(1220f, 54f));
 
             // Un solo recuadro unificado con la sumatoria total de todos los niveles (Niveles 1 al 4)
             var boxBorder = UIFactory.Box(t, "MarcoSumatoriaTotal", new Color(0.90f, 0.70f, 0.24f, 0.96f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1188f, 566f));
@@ -453,8 +466,8 @@ namespace Dolores1810
             victoryStats.lineSpacing = 1.15f;
             UIFactory.PlaceCenter(victoryStats.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -24f), new Vector2(1120f, 480f));
 
-            victoryFirst = UIFactory.MakeButton(t, "Menú principal", new Vector2(-290f, -365f), new Vector2(520f, 92f), () => GameSession.I.GoMenu());
-            UIFactory.MakeButton(t, "Jugar de nuevo", new Vector2(290f, -365f), new Vector2(520f, 92f), () => GameSession.I.LoadScene(SceneNames.ForLevel(1)));
+            victoryFirst = UIFactory.MakeButton(t, "Menú principal", new Vector2(-290f, -380f), new Vector2(520f, 90f), () => GameSession.I.GoMenu());
+            UIFactory.MakeButton(t, "Jugar de nuevo", new Vector2(290f, -380f), new Vector2(520f, 90f), () => GameSession.I.LoadScene(SceneNames.ForLevel(1)));
             victoryPanel.SetActive(false);
         }
 
@@ -825,6 +838,155 @@ namespace Dolores1810
             }
             Time.timeScale = 1f;
             SceneManager.LoadScene(sceneName);
+        }
+
+        // ------------------------------------------------------------ controles táctiles
+        void BuildTouchControls(Transform root)
+        {
+#if UNITY_EDITOR
+            if (joystickBgSprite == null) joystickBgSprite = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/VirtualJoystickPack/Joystick.png").OfType<Sprite>().FirstOrDefault();
+            if (joystickHandleSprite == null) joystickHandleSprite = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/VirtualJoystickPack/SmallHandleFilled.png").OfType<Sprite>().FirstOrDefault();
+            if (buttonRoundSprite == null) buttonRoundSprite = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/VirtualJoystickPack/LargeHandleFilled.png").OfType<Sprite>().FirstOrDefault();
+            if (attackIconSprite == null) attackIconSprite = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/Dolores_Juego/Art/UI/icon_ataque.png").OfType<Sprite>().FirstOrDefault();
+            if (speedIconSprite == null) speedIconSprite = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/Dolores_Juego/Art/UI/icon_velocidad.png").OfType<Sprite>().FirstOrDefault();
+            if (swordIconSprite == null) swordIconSprite = UnityEditor.AssetDatabase.LoadAllAssetsAtPath("Assets/Dolores_Juego/Art/UI/icon_espada.png").OfType<Sprite>().FirstOrDefault();
+#endif
+
+            var touchRoot = UIFactory.Rect("ControlesTactiles", root);
+            UIFactory.Stretch(touchRoot);
+            touchControls = touchRoot.gameObject.AddComponent<TouchControls>();
+
+            // Contenedor dinámico para controles de juego (se oculta al usar teclado/gamepad)
+            var gameplayRoot = UIFactory.Rect("GrupoControlesJuego", touchRoot);
+            UIFactory.Stretch(gameplayRoot);
+            var cg = gameplayRoot.gameObject.AddComponent<CanvasGroup>();
+            touchControls.gameplayGroup = cg;
+
+            // --- JOYSTICK VIRTUAL (Esquina inferior izquierda, dentro de gameplayRoot)
+            var joyBg = UIFactory.Rect("JoystickBackground", gameplayRoot);
+            UIFactory.Place(joyBg, new Vector2(0f, 0f), new Vector2(210f, 210f), new Vector2(240f, 240f));
+            joyBg.pivot = new Vector2(0.5f, 0.5f);
+            var bgImg = joyBg.gameObject.AddComponent<Image>();
+            bgImg.sprite = joystickBgSprite;
+            bgImg.color = new Color(0.96f, 0.92f, 0.82f, 0.75f);
+            bgImg.raycastTarget = true;
+
+            // Anillo exterior de oro
+            var joyRing = UIFactory.Box(joyBg, "AnilloOro", new Color(0.92f, 0.74f, 0.28f, 0.50f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(244f, 244f));
+            joyRing.sprite = buttonRoundSprite;
+            joyRing.raycastTarget = false;
+
+            // Marcadores cardinales
+            AddCardinalMark(joyBg, "N", "▲", new Vector2(0f, 85f));
+            AddCardinalMark(joyBg, "S", "▼", new Vector2(0f, -85f));
+            AddCardinalMark(joyBg, "W", "◄", new Vector2(-85f, 0f));
+            AddCardinalMark(joyBg, "E", "►", new Vector2(85f, 0f));
+
+            var joyHandle = UIFactory.Rect("JoystickHandle", joyBg);
+            joyHandle.pivot = new Vector2(0.5f, 0.5f);
+            joyHandle.anchoredPosition = Vector2.zero;
+            joyHandle.sizeDelta = new Vector2(96f, 96f);
+            var hImg = joyHandle.gameObject.AddComponent<Image>();
+            hImg.sprite = joystickHandleSprite;
+            hImg.color = new Color(0.92f, 0.68f, 0.22f, 0.95f);
+            hImg.raycastTarget = false;
+
+            var vj = joyBg.gameObject.AddComponent<VirtualJoystick>();
+            vj.background = joyBg;
+            vj.handle = joyHandle;
+            vj.handleRange = 1f;
+            touchControls.joystick = vj;
+
+            // Vincular de inmediato con el jugador si ya existe
+            var pl = FindAnyObjectByType<PlatformerPlayer>();
+            if (pl != null) pl.joystick = vj;
+
+            // --- BOTONES DE ACCIÓN TÁCTIL (Esquina inferior derecha, dentro de gameplayRoot)
+            // 1. SALTO (Verde esmeralda insignia, grande)
+            touchControls.btnJump = CreateTouchAction(gameplayRoot, "BtnSalto", "SALTO", "▲", null,
+                new Color(0.18f, 0.48f, 0.22f, 0.90f), new Vector2(-150f, 150f), new Vector2(130f, 130f), 22);
+
+            // 2. ATAQUE (Rojo carmesí insurgente, grande)
+            touchControls.btnAttack = CreateTouchAction(gameplayRoot, "BtnAtaque", "ATAQUE", "", attackIconSprite,
+                new Color(0.68f, 0.12f, 0.10f, 0.92f), new Vector2(-280f, 215f), new Vector2(135f, 135f), 22);
+
+            // 3. USAR / INTERACTUAR (Ámbar cálido)
+            touchControls.btnInteract = CreateTouchAction(gameplayRoot, "BtnUsar", "USAR", "E", null,
+                new Color(0.72f, 0.46f, 0.12f, 0.90f), new Vector2(-150f, 305f), new Vector2(105f, 105f), 20);
+
+            // 4. CAMBIAR ARMA (Añil colonial)
+            touchControls.btnWeapon = CreateTouchAction(gameplayRoot, "BtnArma", "ARMA", "", swordIconSprite,
+                new Color(0.15f, 0.28f, 0.42f, 0.90f), new Vector2(-295f, 365f), new Vector2(100f, 100f), 19);
+
+            // 5. CORRER / SPRINT (Cuero tostado)
+            touchControls.btnRun = CreateTouchAction(gameplayRoot, "BtnCorrer", "CORRER", "", speedIconSprite,
+                new Color(0.40f, 0.24f, 0.12f, 0.90f), new Vector2(-410f, 150f), new Vector2(105f, 105f), 19);
+
+            // --- BOTÓN DE PAUSA (Esquina superior derecha, FUERA de gameplayRoot para que NUNCA se oculte)
+            touchControls.btnPause = CreateTouchAction(touchRoot, "BtnPausa", "", "❚❚", null,
+                new Color(0.24f, 0.14f, 0.08f, 0.94f), new Vector2(-60f, -55f), new Vector2(76f, 76f), 24, new Vector2(1f, 1f));
+
+            var pBtn = touchControls.btnPause.gameObject.AddComponent<Button>();
+            pBtn.transition = Selectable.Transition.None;
+            pBtn.onClick.AddListener(() =>
+            {
+                if (GameSession.I != null) GameSession.I.SetPaused(GameSession.I.State != GameState.Paused);
+            });
+        }
+
+        void AddCardinalMark(Transform parent, string name, string symbol, Vector2 pos)
+        {
+            var lbl = UIFactory.Label(parent, name, symbol, 22, new Color(0.65f, 0.45f, 0.18f, 0.70f), TextAnchor.MiddleCenter, FontStyle.Bold, false);
+            UIFactory.PlaceCenter(lbl.rectTransform, new Vector2(0.5f, 0.5f), pos, new Vector2(36f, 36f));
+            lbl.raycastTarget = false;
+        }
+
+        TouchButton CreateTouchAction(Transform parent, string name, string label, string symbol, Sprite icon, Color fillColor, Vector2 anchorPos, Vector2 size, int fontSize, Vector2? customAnchor = null)
+        {
+            var anchor = customAnchor ?? new Vector2(1f, 0f);
+            var rt = UIFactory.Rect(name, parent);
+            UIFactory.Place(rt, anchor, anchorPos, size);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+
+            // Sombra/Borde exterior oro
+            var ring = UIFactory.Box(rt, "BordeOro", new Color(0.95f, 0.78f, 0.28f, 0.95f), new Vector2(0.5f, 0.5f), Vector2.zero, size);
+            ring.sprite = buttonRoundSprite;
+            ring.raycastTarget = false;
+
+            // Fondo circular con color temático
+            var face = UIFactory.Box(rt, "Fondo", fillColor, new Vector2(0.5f, 0.5f), Vector2.zero, size * 0.90f);
+            face.sprite = buttonRoundSprite;
+            face.raycastTarget = true;
+
+            // Icono o símbolo central
+            if (icon != null)
+            {
+                var ic = UIFactory.Icon(face.transform, "Icono", icon, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), size * 0.44f);
+                ic.color = UIFactory.Cream;
+                ic.raycastTarget = false;
+            }
+            else if (!string.IsNullOrEmpty(symbol))
+            {
+                var sym = UIFactory.Label(face.transform, "Simbolo", symbol, Mathf.RoundToInt(size.x * 0.34f), UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(sym.rectTransform, new Vector2(0.5f, 0.5f), string.IsNullOrEmpty(label) ? Vector2.zero : new Vector2(0f, 10f), size * 0.60f);
+                sym.raycastTarget = false;
+            }
+
+            // Etiqueta de texto inferior
+            if (!string.IsNullOrEmpty(label))
+            {
+                var tx = UIFactory.Label(face.transform, "Etiqueta", label, fontSize, UIFactory.Cream, TextAnchor.MiddleCenter, FontStyle.Bold, false);
+                UIFactory.PlaceCenter(tx.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0f, -size.y * 0.28f), new Vector2(size.x, 30f));
+                tx.raycastTarget = false;
+            }
+
+            var tb = rt.gameObject.AddComponent<TouchButton>();
+            tb.targetTransform = rt;
+            tb.targetGraphic = face;
+            tb.normalColor = fillColor;
+            tb.pressedColor = new Color(Mathf.Min(1f, fillColor.r * 1.35f), Mathf.Min(1f, fillColor.g * 1.35f), Mathf.Min(1f, fillColor.b * 1.35f), 1f);
+
+            return tb;
         }
     }
 }
