@@ -33,7 +33,7 @@ namespace Dolores1810
             shieldItem.id = "mejora_escudo";
             shieldItem.kind = ShopKind.Shield;
             shieldItem.displayName = "Escudo insurgente";
-            shieldItem.description = "Absorbe golpes enemigos antes de perder corazones (+1 carga de escudo por nivel, se regenera fuera de peligro).";
+            shieldItem.description = "Absorbe golpes enemigos antes de perder corazones (+1 carga de escudo por nivel, se recarga al completar cada nivel).";
             shieldItem.prices = new int[] { 110, 220, 350 };
             shieldItem.weaponId = "";
             shieldItem.icon = CreateFallbackShieldSprite();

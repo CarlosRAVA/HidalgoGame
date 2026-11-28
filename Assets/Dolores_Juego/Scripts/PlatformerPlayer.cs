@@ -56,7 +56,6 @@ namespace Dolores1810
         int maxHealth;
         int shield;
         int maxShield;
-        float shieldRegenTimer;
         float facing = 1f;
         float moveInput, vertInput;
         bool grounded, running, exhausted;
@@ -102,7 +101,6 @@ namespace Dolores1810
             RefreshStats(false);
             health = maxHealth;
             shield = maxShield;
-            shieldRegenTimer = 0f;
             stamina = StaminaMax;
         }
 
@@ -249,17 +247,6 @@ namespace Dolores1810
                 if (hurtTimer <= 0f) state = PState.Normal;
             }
             if (invulnTimer > 0f) invulnTimer -= Time.deltaTime;
-            if (maxShield > 0 && shield < maxShield)
-            {
-                if (shieldRegenTimer <= 0f) shieldRegenTimer = PlayerStats.ShieldRegenSeconds;
-                shieldRegenTimer -= Time.deltaTime;
-                if (shieldRegenTimer <= 0f)
-                {
-                    shield = Mathf.Min(maxShield, shield + 1);
-                    shieldRegenTimer = shield < maxShield ? PlayerStats.ShieldRegenSeconds : 0f;
-                    if (gs != null) { gs.RaiseStats(); gs.ShowToast("¡Escudo regenerado!", 1.8f); }
-                }
-            }
 
             // --- interacción
             interactScan -= Time.deltaTime;
@@ -560,7 +547,6 @@ namespace Dolores1810
                 int absorbed = Mathf.Min(shield, dmg);
                 shield -= absorbed;
                 dmg -= absorbed;
-                shieldRegenTimer = PlayerStats.ShieldRegenSeconds;
                 if (dmg <= 0)
                 {
                     invulnTimer = invulnTime;
@@ -614,7 +600,6 @@ namespace Dolores1810
             if (state == PState.Dead) return;
             health = maxHealth;
             shield = maxShield;
-            shieldRegenTimer = 0f;
             stamina = StaminaMax;
             if (GameSession.I != null) GameSession.I.RaiseStats();
         }
@@ -659,7 +644,6 @@ namespace Dolores1810
             RefreshStats(false);
             health = maxHealth;
             shield = maxShield;
-            shieldRegenTimer = 0f;
             stamina = StaminaMax;
             exhausted = false;
             state = PState.Normal;
