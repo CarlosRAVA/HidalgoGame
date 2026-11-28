@@ -63,9 +63,9 @@ namespace Dolores1810
 
         void Build()
         {
-            var canvas = UIFactory.CreateCanvas("Menu", 10);
+            var canvas = UIFactory.CreateCanvasWithSafeArea("Menu", 10, out RectTransform safeArea);
             canvas.transform.SetParent(transform, false);
-            Transform root = canvas.transform;
+            Transform root = safeArea != null ? safeArea : canvas.transform;
 
             mainGroup = UIFactory.Rect("Principal", root).gameObject;
             UIFactory.Stretch(mainGroup.GetComponent<RectTransform>());
@@ -96,7 +96,11 @@ namespace Dolores1810
 
             BuildLevelPanel(root);
             controlsPanel = BuildInfoPanel(root, "PanelControles", "CONTROLES Y MECÁNICAS",
-                "<b><color=#8A4B14>TECLADO Y RATÓN</color></b>\n" +
+                "<b><color=#8A4B14>CONTROLES TÁCTILES (MÓVIL / CELULAR / TABLET)</color></b>\n" +
+                "• <b>Moverse:</b> Joystick circular en pantalla (esquina inferior izquierda)\n" +
+                "• <b>Acciones:</b> Botones táctiles de SALTO, ATAQUE, USAR, ARMA y CORRER (esquina inferior derecha)\n" +
+                "• <b>Pausa:</b> Botón circular dorado en la esquina superior derecha\n\n" +
+                "<b><color=#8A4B14>TECLADO Y RATÓN (PC / WEBGL)</color></b>\n" +
                 "• <b>Moverse:</b> A / D o Flechas   ·   <b>Correr:</b> SHIFT (consume resistencia)\n" +
                 "• <b>Saltar:</b> ESPACIO o W   ·   <b>Trepar escaleras:</b> W / S\n" +
                 "• <b>Atacar:</b> J, Z, X o Clic izquierdo\n" +

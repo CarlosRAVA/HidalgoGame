@@ -48,6 +48,7 @@ namespace Dolores1810
         }
 
         Canvas canvas;
+        RectTransform safeRoot;
         Image[] hearts;
         Image[] shields;
         Image staminaFill, weaponIcon, bossFill;
@@ -136,38 +137,39 @@ namespace Dolores1810
 
         void Build()
         {
-            canvas = UIFactory.CreateCanvas("HUD", 10);
+            canvas = UIFactory.CreateCanvasWithSafeArea("HUD", 10, out safeRoot);
             canvas.transform.SetParent(transform, false);
             Transform root = canvas.transform;
+            Transform hudRoot = safeRoot != null ? safeRoot : root;
 
             flash = UIFactory.FullScreen(root, "FlashDanio", new Color(0.8f, 0.05f, 0.05f, 0f));
 
             // Resistencia
             Image sf;
-            staminaBack = UIFactory.MakeBar(root, "Resistencia", new Color(0.35f, 0.85f, 0.35f, 1f), new Vector2(0f, 1f), new Vector2(44f, -104f), new Vector2(400f, 30f), out sf);
+            staminaBack = UIFactory.MakeBar(hudRoot, "Resistencia", new Color(0.35f, 0.85f, 0.35f, 1f), new Vector2(0f, 1f), new Vector2(44f, -104f), new Vector2(400f, 30f), out sf);
             staminaFill = sf;
             var stl = UIFactory.Label(staminaBack, "Texto", "RESISTENCIA", 22, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UIFactory.Stretch(stl.rectTransform);
 
             // Arma
-            weaponIcon = UIFactory.Icon(root, "ArmaIcono", null, new Vector2(0f, 1f), new Vector2(44f, -148f), new Vector2(64f, 64f));
-            weaponText = UIFactory.Label(root, "ArmaNombre", "", 36, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold);
+            weaponIcon = UIFactory.Icon(hudRoot, "ArmaIcono", null, new Vector2(0f, 1f), new Vector2(44f, -148f), new Vector2(64f, 64f));
+            weaponText = UIFactory.Label(hudRoot, "ArmaNombre", "", 36, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold);
             UIFactory.Place(weaponText.rectTransform, new Vector2(0f, 1f), new Vector2(118f, -148f), new Vector2(560f, 64f));
 
             // Monedas y vidas
-            UIFactory.Icon(root, "IconoMoneda", coinSprite, new Vector2(0f, 1f), new Vector2(44f, -224f), new Vector2(54f, 54f));
-            coinsText = UIFactory.Label(root, "Monedas", "x 0", 46, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
+            UIFactory.Icon(hudRoot, "IconoMoneda", coinSprite, new Vector2(0f, 1f), new Vector2(44f, -224f), new Vector2(54f, 54f));
+            coinsText = UIFactory.Label(hudRoot, "Monedas", "x 0", 46, UIFactory.Gold, TextAnchor.MiddleLeft, FontStyle.Bold);
             UIFactory.Place(coinsText.rectTransform, new Vector2(0f, 1f), new Vector2(108f, -224f), new Vector2(300f, 54f));
-            livesText = UIFactory.Label(root, "Vidas", "Vidas: 3", 38, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold);
+            livesText = UIFactory.Label(hudRoot, "Vidas", "Vidas: 3", 38, UIFactory.Cream, TextAnchor.MiddleLeft, FontStyle.Bold);
             UIFactory.Place(livesText.rectTransform, new Vector2(0f, 1f), new Vector2(330f, -224f), new Vector2(280f, 54f));
 
-            scoreText = UIFactory.Label(root, "Puntos", "PUNTOS 000000", 46, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold);
+            scoreText = UIFactory.Label(hudRoot, "Puntos", "PUNTOS 000000", 46, UIFactory.Cream, TextAnchor.MiddleRight, FontStyle.Bold);
             UIFactory.Place(scoreText.rectTransform, new Vector2(1f, 1f), new Vector2(-120f, -38f), new Vector2(640f, 56f));
-            timeText = UIFactory.Label(root, "Tiempo", "00:00", 36, new Color(1f, 1f, 1f, 0.9f), TextAnchor.MiddleRight, FontStyle.Bold);
+            timeText = UIFactory.Label(hudRoot, "Tiempo", "00:00", 36, new Color(1f, 1f, 1f, 0.9f), TextAnchor.MiddleRight, FontStyle.Bold);
             UIFactory.Place(timeText.rectTransform, new Vector2(1f, 1f), new Vector2(-120f, -96f), new Vector2(400f, 42f));
 
             // Tracker de misiones en HUD
-            var hmr = UIFactory.Rect("MisionesHUD", root);
+            var hmr = UIFactory.Rect("MisionesHUD", hudRoot);
             UIFactory.Place(hmr, new Vector2(1f, 1f), new Vector2(-36f, -148f), new Vector2(500f, 252f));
             hudMissionsGroup = Group(hmr, 0f);
             UIFactory.FullScreen(hmr, "Fondo", new Color(0.12f, 0.07f, 0.04f, 0.84f));
@@ -197,7 +199,7 @@ namespace Dolores1810
             }
 
             // Objetivo
-            var orr = UIFactory.Rect("Objetivo", root);
+            var orr = UIFactory.Rect("Objetivo", hudRoot);
             UIFactory.PlaceCenter(orr, new Vector2(0.5f, 1f), new Vector2(0f, -48f), new Vector2(740f, 60f));
             objectiveGroup = Group(orr, 0f);
             UIFactory.FullScreen(orr, "Fondo", new Color(0.14f, 0.08f, 0.04f, 0.86f));
@@ -209,7 +211,7 @@ namespace Dolores1810
             objectiveText.rectTransform.offsetMax = new Vector2(-18f, -2f);
 
             // Barra de jefe
-            var br = UIFactory.Rect("Jefe", root);
+            var br = UIFactory.Rect("Jefe", hudRoot);
             UIFactory.PlaceCenter(br, new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(920f, 80f));
             bossGroup = Group(br, 0f);
             bossName = UIFactory.Label(br, "Nombre", "", 38, new Color(1f, 0.8f, 0.7f, 1f), TextAnchor.UpperCenter, FontStyle.Bold);
@@ -219,7 +221,7 @@ namespace Dolores1810
             bossFill = bf;
 
             // Zona (centrada horizontalmente con x = 0f)
-            var zr = UIFactory.Rect("Zona", root);
+            var zr = UIFactory.Rect("Zona", hudRoot);
             UIFactory.Place(zr, new Vector2(0.5f, 1f), new Vector2(0f, -200f), new Vector2(1600f, 220f));
             zoneGroup = Group(zr, 0f);
             zoneTitle = UIFactory.Label(zr, "Titulo", "", 94, UIFactory.Gold, TextAnchor.UpperCenter, FontStyle.Normal, true, titleFont);
@@ -228,14 +230,14 @@ namespace Dolores1810
             UIFactory.Place(zoneSub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -112f), new Vector2(1600f, 75f));
 
             // Aviso (toast)
-            var tr = UIFactory.Rect("Aviso", root);
+            var tr = UIFactory.Rect("Aviso", hudRoot);
             UIFactory.PlaceCenter(tr, new Vector2(0.5f, 0f), new Vector2(0f, 350f), new Vector2(1700f, 120f));
             toastGroup = Group(tr, 0f);
             toastText = UIFactory.Label(tr, "Texto", "", 46, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Bold);
             UIFactory.Stretch(toastText.rectTransform);
 
             // Interacción
-            var pr = UIFactory.Rect("Interaccion", root);
+            var pr = UIFactory.Rect("Interaccion", hudRoot);
             UIFactory.PlaceCenter(pr, new Vector2(0.5f, 0f), new Vector2(0f, 235f), new Vector2(1050f, 84f));
             promptGroup = Group(pr, 0f);
             var pbg = UIFactory.FullScreen(pr, "Fondo", new Color(0f, 0f, 0f, 0.55f));
@@ -243,7 +245,7 @@ namespace Dolores1810
             UIFactory.Stretch(promptText.rectTransform);
 
             // Ayuda de controles
-            var hr = UIFactory.Rect("Ayuda", root);
+            var hr = UIFactory.Rect("Ayuda", hudRoot);
             UIFactory.PlaceCenter(hr, new Vector2(0.5f, 0f), new Vector2(0f, 60f), new Vector2(1900f, 64f));
             hintGroup = Group(hr, 1f);
             hintText = UIFactory.Label(hr, "Texto", "A/D mover   SHIFT correr   ESPACIO saltar   J atacar   E interactuar   Q cambiar arma   ESC pausa", 35, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
@@ -261,7 +263,7 @@ namespace Dolores1810
             SetLetterbox(0f);
 
             // Presentación de nivel (centrada horizontalmente con x = 0f para que no se corte a la izquierda)
-            var ir = UIFactory.Rect("Introduccion", root);
+            var ir = UIFactory.Rect("Introduccion", hudRoot);
             UIFactory.PlaceCenter(ir, new Vector2(0.5f, 0.5f), new Vector2(0f, 20f), new Vector2(1740f, 340f));
             introGroup = Group(ir, 0f);
             introTitle = UIFactory.Label(ir, "Titulo", "", 98, UIFactory.Gold, TextAnchor.MiddleCenter, FontStyle.Normal, true, titleFont);
@@ -270,13 +272,13 @@ namespace Dolores1810
             UIFactory.PlaceCenter(introSub.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -210f), new Vector2(1700f, 140f));
 
             // Texto de salida
-            var er = UIFactory.Rect("TextoSalida", root);
+            var er = UIFactory.Rect("TextoSalida", hudRoot);
             UIFactory.PlaceCenter(er, new Vector2(0.5f, 0.5f), new Vector2(0f, -330f), new Vector2(1650f, 220f));
             exitGroup = Group(er, 0f);
             exitText = UIFactory.Label(er, "Texto", "", 48, Color.white, TextAnchor.MiddleCenter, FontStyle.Bold);
             UIFactory.Stretch(exitText.rectTransform);
 
-            BuildTouchControls(root);
+            BuildTouchControls(hudRoot);
 
             BuildPause(root);
             settings = SettingsUI.Create(root, OnSettingsBack, false);
@@ -347,18 +349,19 @@ namespace Dolores1810
 
         void BuildHearts()
         {
+            Transform hRoot = safeRoot != null ? safeRoot : canvas.transform;
             int n = 7;
             hearts = new Image[n];
             for (int i = 0; i < n; i++)
             {
-                hearts[i] = UIFactory.Icon(canvas.transform, "Corazon" + i, heartSprite, new Vector2(0f, 1f), new Vector2(36f + i * 56f, -34f), new Vector2(52f, 52f));
+                hearts[i] = UIFactory.Icon(hRoot, "Corazon" + i, heartSprite, new Vector2(0f, 1f), new Vector2(36f + i * 56f, -34f), new Vector2(52f, 52f));
                 hearts[i].gameObject.SetActive(false);
             }
             shields = new Image[GameRules.MaxShieldUpgrades];
             Sprite shSp = GetShieldSprite();
             for (int i = 0; i < shields.Length; i++)
             {
-                shields[i] = UIFactory.Icon(canvas.transform, "Escudo" + i, shSp, new Vector2(0f, 1f), new Vector2(36f + i * 52f, -36f), new Vector2(48f, 48f));
+                shields[i] = UIFactory.Icon(hRoot, "Escudo" + i, shSp, new Vector2(0f, 1f), new Vector2(36f + i * 52f, -36f), new Vector2(48f, 48f));
                 shields[i].gameObject.SetActive(false);
             }
         }

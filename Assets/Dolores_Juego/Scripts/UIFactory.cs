@@ -254,6 +254,16 @@ namespace Dolores1810
             return c;
         }
 
+        public static Canvas CreateCanvasWithSafeArea(string name, int sortOrder, out RectTransform safeArea)
+        {
+            var c = CreateCanvas(name, sortOrder);
+            var sa = Rect("SafeArea", c.transform);
+            Stretch(sa);
+            sa.gameObject.AddComponent<SafeAreaFitter>();
+            safeArea = sa;
+            return c;
+        }
+
         public static RectTransform Rect(string name, Transform parent)
         {
             var go = new GameObject(name, typeof(RectTransform));

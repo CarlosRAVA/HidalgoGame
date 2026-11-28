@@ -123,6 +123,99 @@ namespace Dolores1810.EditorTools
                 EditorUtility.DisplayDialog("Error", ex.Message, "OK");
             }
         }
+
+        [MenuItem("Tools/Dolores 1810/Exportar APK para Android (.apk)", priority = 22)]
+        public static void ExportAndroidAPK()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string buildsDir = Path.Combine(projectRoot, "Builds");
+            string androidDir = Path.Combine(buildsDir, "Android");
+            string apkPath = Path.Combine(androidDir, "1810_Dolores_Android.apk");
+
+            // 1. Configurar PlayerSettings y compatibilidad universal para Android
+            PlayerSettings.companyName = "Dolores 1810";
+            PlayerSettings.productName = "1810: Dolores - El Grito de la Libertad";
+            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.Dolores1810.ElGritoDeLaLibertad");
+            PlayerSettings.bundleVersion = "1.0";
+            PlayerSettings.Android.bundleVersionCode = 1;
+
+            // Orientación: Exclusivamente horizontal (Landscape Left y Landscape Right permitidos)
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+            PlayerSettings.allowedAutorotateToLandscapeLeft = true;
+            PlayerSettings.allowedAutorotateToLandscapeRight = true;
+            PlayerSettings.allowedAutorotateToPortrait = false;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+
+            // Versión mínima de Android: API 24 (Android 7.0 Nougat - compatible con más del 98% de dispositivos)
+            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
+            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+
+            // Modo inmersivo en pantalla completa
+            PlayerSettings.Android.fullscreenMode = FullScreenMode.ExclusiveFullScreen;
+            PlayerSettings.Android.renderOutsideSafeArea = true;
+
+            // Generar archivo .APK instalable directamente (no .AAB)
+            EditorUserBuildSettings.buildAppBundle = false;
+            EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+
+            // 2. Verificar soporte de compilación de Android en Unity
+            if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Android, BuildTarget.Android))
+            {
+                Debug.LogWarning("[ItchExporter] El módulo 'Android Build Support' no está instalado en este editor de Unity.");
+                EditorUtility.DisplayDialog(
+                    "Se requiere módulo de Android en Unity Hub",
+                    "Para compilar el archivo instalable .apk, necesitas activar el módulo 'Android Build Support' en Unity Hub (toma 1 minuto):\n\n" +
+                    "1. Abre la ventana de Unity Hub.\n" +
+                    "2. En la barra lateral izquierda, entra a 'Installs' (Instalaciones).\n" +
+                    "3. En tu versión de Unity (6000.6.0f1), haz clic en el engrane ⚙️ y elige 'Add modules' (Añadir módulos).\n" +
+                    "4. Marca la casilla 'Android Build Support' (junto con 'Android SDK & NDK Tools' y 'OpenJDK').\n" +
+                    "5. Presiona 'Install'. Una vez termine, reinicia Unity.\n\n" +
+                    "Al reiniciar, vuelve a hacer clic aquí y generará tu archivo .apk de inmediato.",
+                    "Entendido");
+                return;
+            }
+
+            if (!Directory.Exists(buildsDir)) Directory.CreateDirectory(buildsDir);
+            if (!Directory.Exists(androidDir)) Directory.CreateDirectory(androidDir);
+            if (File.Exists(apkPath)) File.Delete(apkPath);
+
+            Debug.Log("[ItchExporter] Iniciando compilación de Android APK...");
+            EditorUtility.DisplayProgressBar("Android APK Exporter", "Compilando paquete Android (.apk)...", 0.3f);
+
+            try
+            {
+                BuildPlayerOptions opts = new BuildPlayerOptions();
+                opts.scenes = GameScenes;
+                opts.locationPathName = apkPath;
+                opts.target = BuildTarget.Android;
+                opts.options = BuildOptions.None;
+
+                BuildReport report = BuildPipeline.BuildPlayer(opts);
+                EditorUtility.ClearProgressBar();
+
+                if (report.summary.result == BuildResult.Succeeded)
+                {
+                    Debug.Log("<color=green>[ItchExporter] ¡Exportación Android exitosa!</color> APK generado en: " + apkPath);
+                    EditorUtility.RevealInFinder(apkPath);
+                    EditorUtility.DisplayDialog("Exportación Android Exitosa",
+                        "¡El paquete de Android (.apk) funcional se ha generado con éxito!\n\n" +
+                        "Archivo: " + apkPath + "\n\n" +
+                        "Ya puedes transferir este archivo a tu celular Android (por cable USB, WhatsApp Web, Google Drive) o instalarlo en un emulador.\n" +
+                        "En el teléfono solo debes abrir el archivo y seleccionar 'Instalar'.", "Entendido");
+                }
+                else
+                {
+                    Debug.LogError("[ItchExporter] La compilación Android falló con resultado: " + report.summary.result);
+                    EditorUtility.DisplayDialog("Error de compilación", "La compilación Android no pudo completarse. Revisa la consola de Unity.", "OK");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                EditorUtility.ClearProgressBar();
+                Debug.LogError("[ItchExporter] Excepción durante la exportación de Android: " + ex);
+                EditorUtility.DisplayDialog("Error", ex.Message, "OK");
+            }
+        }
     }
 }
 #endif
