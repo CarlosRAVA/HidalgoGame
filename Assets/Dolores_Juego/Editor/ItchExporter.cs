@@ -51,7 +51,7 @@ namespace Dolores1810.EditorTools
                 if (report.summary.result == BuildResult.Succeeded)
                 {
                     if (File.Exists(zipPath)) File.Delete(zipPath);
-                    ZipFile.CreateFromDirectory(webglDir, zipPath, CompressionLevel.Optimal, false);
+                    ZipFile.CreateFromDirectory(webglDir, zipPath, System.IO.Compression.CompressionLevel.Optimal, false);
 
                     Debug.Log("<color=green>[ItchExporter] ¡Exportación WebGL exitosa!</color> Archivo ZIP generado en: " + zipPath);
                     EditorUtility.RevealInFinder(zipPath);
@@ -103,7 +103,7 @@ namespace Dolores1810.EditorTools
                 if (report.summary.result == BuildResult.Succeeded)
                 {
                     if (File.Exists(zipPath)) File.Delete(zipPath);
-                    ZipFile.CreateFromDirectory(winDir, zipPath, CompressionLevel.Optimal, false);
+                    ZipFile.CreateFromDirectory(winDir, zipPath, System.IO.Compression.CompressionLevel.Optimal, false);
 
                     Debug.Log("<color=green>[ItchExporter] ¡Exportación Windows exitosa!</color> Archivo ZIP en: " + zipPath);
                     EditorUtility.RevealInFinder(zipPath);
