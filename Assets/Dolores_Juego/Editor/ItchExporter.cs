@@ -2,14 +2,16 @@
 using System.IO;
 using System.IO.Compression;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Dolores1810.EditorTools
 {
     /// <summary>
-    /// Exportador automatizado para generar las compilaciones listas para subir a Itch.io.
-    /// Genera la carpeta y el archivo .ZIP comprimido con un solo clic.
+    /// Exportador automatizado para generar las compilaciones listas para subir a Itch.io y paquetes Android APK.
+    /// Genera la carpeta y el archivo comprimido o APK con un solo clic.
     /// </summary>
     public static class ItchExporter
     {
@@ -21,6 +23,37 @@ namespace Dolores1810.EditorTools
             "Assets/Scenes/Level3.unity",
             "Assets/Scenes/Level4.unity"
         };
+
+        /// <summary>
+        /// Compila abriendo temporalmente una escena limpia para evitar que el analizador de shaders
+        /// de URP 2D (Light2DPrefilteringAnalysis) reporte falsos errores de "More than one global light"
+        /// al abrir aditivamente las escenas de la compilación.
+        /// </summary>
+        static BuildReport BuildWithCleanScene(BuildPlayerOptions opts)
+        {
+            var currentScene = EditorSceneManager.GetActiveScene();
+            string currentPath = currentScene.path;
+            bool hasSavedScene = !string.IsNullOrEmpty(currentPath);
+
+            if (currentScene.isDirty && hasSavedScene)
+            {
+                EditorSceneManager.SaveScene(currentScene);
+            }
+
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            try
+            {
+                return BuildPipeline.BuildPlayer(opts);
+            }
+            finally
+            {
+                if (hasSavedScene && File.Exists(currentPath))
+                {
+                    EditorSceneManager.OpenScene(currentPath, OpenSceneMode.Single);
+                }
+            }
+        }
 
         [MenuItem("Tools/Dolores 1810/Exportar para Itch.io (Navegador WebGL)", priority = 20)]
         public static void ExportWebGL()
@@ -45,7 +78,7 @@ namespace Dolores1810.EditorTools
                 opts.target = BuildTarget.WebGL;
                 opts.options = BuildOptions.None;
 
-                BuildReport report = BuildPipeline.BuildPlayer(opts);
+                BuildReport report = BuildWithCleanScene(opts);
                 EditorUtility.ClearProgressBar();
 
                 if (report.summary.result == BuildResult.Succeeded)
@@ -97,7 +130,7 @@ namespace Dolores1810.EditorTools
                 opts.target = BuildTarget.StandaloneWindows64;
                 opts.options = BuildOptions.None;
 
-                BuildReport report = BuildPipeline.BuildPlayer(opts);
+                BuildReport report = BuildWithCleanScene(opts);
                 EditorUtility.ClearProgressBar();
 
                 if (report.summary.result == BuildResult.Succeeded)
@@ -135,7 +168,7 @@ namespace Dolores1810.EditorTools
             // 1. Configurar PlayerSettings y compatibilidad universal para Android
             PlayerSettings.companyName = "Dolores 1810";
             PlayerSettings.productName = "1810: Dolores - El Grito de la Libertad";
-            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.Dolores1810.ElGritoDeLaLibertad");
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.Dolores1810.ElGritoDeLaLibertad");
             PlayerSettings.bundleVersion = "1.0";
             PlayerSettings.Android.bundleVersionCode = 1;
 
@@ -146,8 +179,8 @@ namespace Dolores1810.EditorTools
             PlayerSettings.allowedAutorotateToPortrait = false;
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
 
-            // Versión mínima de Android: API 24 (Android 7.0 Nougat - compatible con más del 98% de dispositivos)
-            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
+            // Versión mínima de Android: API 26 (Android 8.0 Oreo - estándar moderno de Unity 6)
+            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
 
             // Modo inmersivo en pantalla completa
@@ -190,7 +223,7 @@ namespace Dolores1810.EditorTools
                 opts.target = BuildTarget.Android;
                 opts.options = BuildOptions.None;
 
-                BuildReport report = BuildPipeline.BuildPlayer(opts);
+                BuildReport report = BuildWithCleanScene(opts);
                 EditorUtility.ClearProgressBar();
 
                 if (report.summary.result == BuildResult.Succeeded)

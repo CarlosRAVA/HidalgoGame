@@ -15,7 +15,7 @@ namespace Dolores1810
         private RectTransform targetRect;
         private Rect lastSafeArea = Rect.zero;
         private Vector2Int lastScreenSize = Vector2Int.zero;
-        private ScreenOrientation lastOrientation = ScreenOrientation.Unknown;
+        private ScreenOrientation lastOrientation = (ScreenOrientation)(-1);
 
         void Awake()
         {
