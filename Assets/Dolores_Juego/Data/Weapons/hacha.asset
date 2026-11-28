@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cb7a6347c0db454c8d43888cd7b748b, type: 3}
+  m_Name: hacha
+  m_EditorClassIdentifier: Assembly-CSharp::Dolores1810.WeaponData
+  id: hacha
+  displayName: "Hacha de le\xF1ador"
+  description: El arma con la que empiezas. Golpe pesado y firme.
+  icon: {fileID: 21300000, guid: 18899da097c528e4d957aeb4ef5e774a, type: 3}
+  damage: 10
+  attackSpeed: 1
+  reach: 1
+  price: 0
+  knockback: 1
+  attackClip:
+    name: ataque_hacha
+    frames:
+    - {fileID: 21300000, guid: 4d17cc513c0166a4d8989b044b04fd6c, type: 3}
+    - {fileID: 21300000, guid: 326011cdf708eab41979fc89e7a13858, type: 3}
+    - {fileID: 21300000, guid: 962a8cb6128e6044093e6db33e8cd015, type: 3}
+    - {fileID: 21300000, guid: 6ac149cf57b133a47a84181c323c0de2, type: 3}
+    - {fileID: 21300000, guid: 58daf73a9a0189b47aff558e7b0f1ae3, type: 3}
+    - {fileID: 21300000, guid: bc154419f12fbfb48b739cd8c29427e3, type: 3}
+    - {fileID: 21300000, guid: 15c29f6872244bb4d9cb8873499adbe6, type: 3}
+    - {fileID: 21300000, guid: 9466b44da294dc247a3fb0bd53092edf, type: 3}
+    fps: 17
+    loop: 0
+  hitStartFrame: 3
+  hitEndFrame: 5
+  slashColor: {r: 1, g: 1, b: 1, a: 1}
+  swingSfx: 2

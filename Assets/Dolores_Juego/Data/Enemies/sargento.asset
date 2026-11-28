@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c65ccefb2daf1a94c8e82ef8a07f5e31, type: 3}
+  m_Name: sargento
+  m_EditorClassIdentifier: Assembly-CSharp::Dolores1810.EnemyConfig
+  displayName: Sargento
+  tier: 2
+  isBoss: 0
+  skin: 2
+  tint: {r: 0.78, g: 0.82, b: 1, a: 1}
+  scale: 1.12
+  hitsToKill: 6
+  heartsDamage: 3
+  patrolSpeed: 1.3
+  chaseSpeed: 3
+  aggroRange: 9
+  loseRange: 15
+  attackRange: 2.5
+  attackCooldown: 1.8
+  staggerChance: 0.35
+  hitBoxSize: {x: 2.4, y: 1.5}
+  hitBoxOffset: {x: 1.5, y: 0.95}
+  colliderWidth: 1.1
+  colliderHeight: 2
+  coinReward: 10
+  scoreValue: 220
+  appleChance: 0.25
+  dropsHeart: 0

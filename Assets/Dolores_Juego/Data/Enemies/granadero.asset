@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c65ccefb2daf1a94c8e82ef8a07f5e31, type: 3}
+  m_Name: granadero
+  m_EditorClassIdentifier: Assembly-CSharp::Dolores1810.EnemyConfig
+  displayName: Granadero
+  tier: 1
+  isBoss: 0
+  skin: 2
+  tint: {r: 1, g: 1, b: 1, a: 1}
+  scale: 1
+  hitsToKill: 4
+  heartsDamage: 2
+  patrolSpeed: 1.2
+  chaseSpeed: 2.8
+  aggroRange: 8.5
+  loseRange: 14
+  attackRange: 2.3
+  attackCooldown: 2
+  staggerChance: 0.5
+  hitBoxSize: {x: 2.4, y: 1.5}
+  hitBoxOffset: {x: 1.5, y: 0.95}
+  colliderWidth: 1.1
+  colliderHeight: 2
+  coinReward: 6
+  scoreValue: 120
+  appleChance: 0.25
+  dropsHeart: 0

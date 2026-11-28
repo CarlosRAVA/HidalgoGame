@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfc2410c084a0884c8c22004956d4acc, type: 3}
+  m_Name: GameDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::Dolores1810.GameDatabase
+  weapons:
+  - {fileID: 11400000, guid: e195c83c26dd9094885522ca55a12474, type: 2}
+  - {fileID: 11400000, guid: 74fa0565c3ab0384c8ed2793d4b61344, type: 2}
+  - {fileID: 11400000, guid: 322e4a9808c4508479ddf7e5516aac75, type: 2}
+  - {fileID: 11400000, guid: 623a954e71112744f897e5874abddc38, type: 2}
+  - {fileID: 11400000, guid: b752b6b43233211428692ea83375775e, type: 2}
+  shopItems:
+  - {fileID: 11400000, guid: 441b8f9633032da418623b3890bee093, type: 2}
+  - {fileID: 11400000, guid: f512e7cb68215f542ba8b2f042a2d976, type: 2}
+  - {fileID: 11400000, guid: 0010bb70705106c4bbaa8f6f42fb3ceb, type: 2}
+  - {fileID: 11400000, guid: 4f2fc00a5f6d3f540b68e2b968c5f862, type: 2}
+  - {fileID: 11400000, guid: defdeb44c37dce64dba15eb6373559aa, type: 2}
+  - {fileID: 11400000, guid: 22cbb7f9cb24df54e9b21767242434bb, type: 2}
+  - {fileID: 11400000, guid: add07a6e6e592594d81e93ce19632ba0, type: 2}
+  - {fileID: 11400000, guid: ebaa59718d029e045aaf3235b72627b3, type: 2}
+  - {fileID: 11400000, guid: 7ffa11d7d39ea324e8842af3280d9fbc, type: 2}
+  - {fileID: 11400000, guid: cdf3ce6807dc4bcd8079fe1d2ca7ab7c, type: 2}
+  enemies:
+  - {fileID: 11400000, guid: cd099d2e5f9aa20478018581780583ec, type: 2}
+  - {fileID: 11400000, guid: 07a9e22a45635b6459e7902c362681f3, type: 2}
+  - {fileID: 11400000, guid: 612776d74232f29438040bbe7fb32855, type: 2}
+  - {fileID: 11400000, guid: 20847dcbedae330488b329f161abd211, type: 2}
+  - {fileID: 11400000, guid: a43c73ca07f36ef47af7ab8eaaac55ce, type: 2}
+  - {fileID: 11400000, guid: 374219443c5169749b63a1259ed8d483, type: 2}
+  levels:
+  - index: 1
+    sceneName: Level1
+    title: 'Nivel 1: El Pueblo de Dolores'
+    description: "Septiembre de 1810. Cruza el pueblo de d\xEDa y de noche, aprende a pelear y busca tesoros escondidos."
+    introLine: "Un pueblo tranquilo que pronto cambiar\xE1 la historia."
+    thumbnail: {fileID: 21300000, guid: 7a6f48dd8fbf0e0499cc21d05fbffdf1, type: 3}
+  - index: 2
+    sceneName: Level2
+    title: 'Nivel 2: El Camino de la Insurgencia'
+    description: "Un camino nocturno entre r\xEDos, bosques y haciendas. Al amanecer te espera un capit\xE1n realista."
+    introLine: La noche cubre el camino. Hay que seguir adelante.
+    thumbnail: {fileID: 21300000, guid: 7fe84feaaed71b04ab67d4437e4f2bd5, type: 3}
+  - index: 3
+    sceneName: Level3
+    title: 'Nivel 3: La Plaza de Armas'
+    description: Toma las calles iluminadas por faroles y derrota al Coronel realista para abrir paso hacia la Parroquia.
+    introLine: "La lucha llega al coraz\xF3n de Dolores."
+    thumbnail: {fileID: 21300000, guid: 82940feafa827af479582f08e02152c9, type: 3}
+  - index: 4
+    sceneName: Level4
+    title: 'Nivel 4: El Grito de Independencia'
+    description: El asalto final hacia la Parroquia de Dolores. Derrota al General Realista y haz sonar la campana.
+    introLine: La Parroquia espera. Ha llegado el momento de la libertad.
+    thumbnail: {fileID: 21300000, guid: 82940feafa827af479582f08e02152c9, type: 3}

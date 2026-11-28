@@ -1,0 +1,57 @@
+﻿================================================================================
+   INFORME DE VERIFICACIÓN AUTOMATIZADA - 1810: EL GRITO DE LA LIBERTAD
+================================================================================
+Fecha de ejecución: 2026-11-12 22:58:07
+Unity Version: 6000.6.0f1
+
+[PASA] 1. Caminar, correr con SHIFT, consumo y recuperación de resistencia, agotamiento
+       Evidencia: walkSpeed=4.8, runSpeed=8.4, staminaDrain=26.0/s, staminaRegenDelay=0.9s, exhaustedResume=30 %, StaminaMax=100. Agotamiento al llegar a 0 y reactivación solo al recuperar 30%.
+
+[PASA] 2. Saltar, escalar (W/S solo en escaleras), subir/bajar y bajarse de la escalera
+       Evidencia: W/S no inicia escalada fuera de ClimbZone; al entrar a ClimbZone W inicia PState.Climbing; pulsar salto desmonta de la escalera restaurando gravedad; límites superior e inferior delimitan la azotea.
+
+[PASA] 3. Daño de enemigos según tabla y ventana de invulnerabilidad
+       Evidencia: Debil: 2 golpes / 1 corazones (Esperado 2/1); Intermedio: 4 golpes / 2 corazones (Esperado 4/2); Resistente: 6 golpes / 3 corazones (Esperado 6/3); MuyResistente: 8 golpes / 4 corazones (Esperado 8/4); Invulnerabilidad de 1.1s previene daño múltiple en el mismo ataque.
+
+[PASA] 4. Armas: daño escalonado, regla del doble (Estoque 2x Lanza), persistencia
+       Evidencia: Hacha: 10, Espada: 15, Machete: 20, Lanza: 25, Estoque: 50. Estoque (50) es exactamente el doble que Lanza (25). Equipado persiste en PlayerProgress.
+
+[PASA] 5. Cajas y barriles rompibles, cofres interactuables con E
+       Evidencia: Breakables reciben daño (IDamageable) y se rompen; cofres (IInteractable) se abren con E, entregan monedas y registran ID en progreso persistente impidiendo apertura duplicada.
+
+[PASA] 6. Tienda y economía: validación de saldo, descuento de monedas y tope de corazones
+       Evidencia: Sin saldo no permite compra. Con saldo: Compra 1 (corazones=1, saldo=850), Compra 2 (corazones=2, saldo=550), Compra 3 rechazada (corazones=2, tope=2). Compra de arma exitosa.
+
+[PASA] 7. Guardado persistente y protección de integridad HMAC-SHA256
+       Evidencia: Datos guardados persisten exactamente (monedas, armas, niveles, cofres, pergaminos). Al alterar bytes/texto del archivo dolores1810.sav, la firma HMAC difiere y el sistema rechaza los datos manipulados.
+
+[PASA] 8. Selección y progresión de niveles desbloqueables
+       Evidencia: Partida nueva: Nivel 1 desbloqueado, Nivel 2 y 3 bloqueados. Al completar Nivel 1: Nivel 2 desbloqueado, Nivel 3 bloqueado. Al completar Nivel 2: Nivel 3 desbloqueado.
+
+[PASA] 9. Salidas de nivel, ciclo día/noche y presencia exclusiva de la campana en Nivel 3
+       Evidencia: Nivel 1: LevelExit a Level2, día a noche (tod: 0->1), sin campana. Nivel 2: LevelExit a Level3, noche a día (tod: 1->0), sin campana. Nivel 3: sin LevelExit, día a noche (tod: 0->1), campana presente.
+
+[PASA] 10. Jefes (Capitán en Nivel 2, Coronel en Nivel 3), reinicio ante muerte y rejas
+       Evidencia: Nivel 2: Capitán realista configurado con rejas de arena (1) y reja de recompensa. Nivel 3: Coronel realista configurado igual. ResetFight reabre rejas de arena y restaura vida si el jugador muere.
+
+[PASA] 11. Secuencia final por toque de campana
+       Evidencia: LevelGoal en Nivel 3 vinculado al transform de la campana. Al entrar en el disparador ejecuta GameSession.StartFinal(), iniciando oscilación física, repique y pantalla de victoria con resumen de partida.
+
+[PASA] 12. Sistema de Pausa y congelamiento de tiempo (Time.timeScale)
+       Evidencia: GameSession.SetPaused(true) establece GameState.Paused y Time.timeScale = 0f. SetPaused(false) restaura GameState.Playing y Time.timeScale = 1f.
+
+[PASA] 13. Música con crossfade exclusivo (2 fuentes alternadas) y ajuste de volúmenes
+       Evidencia: MusicManager utiliza exactamente 2 AudioSources con fundido cruzado para garantizar una sola pista activa a la vez. Sliders de Master, Música y Efectos responden y sincronizan AudioListener.volume.
+
+[PASA] 14. Navegación con teclado y control (Gamepad)
+       Evidencia: GameInput abstrae y combina teclado y Gamepad (stick analógico, D-pad, botones sur/oeste/norte/este). UIFactory.EnsureEventSystem() inicializa InputSystemUIInputModule con acciones por defecto para navegación con teclas/cruceta.
+
+[PASA] 15. Consola limpia: cero errores o excepciones durante carga de escenas
+       Evidencia: Las 4 escenas (MainMenu, Level1, Level2, Level3) se cargaron y validaron completamente sin lanzar ningún error o excepción en la consola de Unity.
+
+[PASA] 16. Auditoría de geometría y transitabilidad en los 3 niveles
+       Evidencia: Nivel 1: 28 enemigos, 3 escaleras, 26 destructibles, 3 cofres; Nivel 2: 25 enemigos, 3 escaleras, 26 destructibles, 3 cofres; Nivel 3: 25 enemigos, 3 escaleras, 18 destructibles, 3 cofres; Ningún enemigo fuera del suelo ni en vacío, todas las escaleras y plataformas correctamente configuradas y alcanzables.
+
+--------------------------------------------------------------------------------
+RESUMEN GENERAL: 16 PASARON, 0 FALLARON (Total: 16)
+================================================================================
